@@ -322,6 +322,33 @@ p.subtitle {
   box-shadow: 0 1px 0 #730f31;
 }
 
+.banner-survivor {
+  background: radial-gradient(circle at 50% 40%, rgba(168, 85, 247, 0.25), #0b0717 80%);
+}
+.icon-survivor {
+  background: linear-gradient(135deg, #a855f7, #6b21a8);
+  border: 2px solid #d8b4fe;
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
+}
+.pill-survivor {
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid var(--neon-purple);
+  color: #c084fc;
+}
+.btn-purple {
+  background: linear-gradient(135deg, #a855f7, #7e22ce);
+  color: #ffffff;
+  box-shadow: 0 4px 0 #4c1d95, 0 0 16px rgba(168, 85, 247, 0.35);
+}
+.btn-purple:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 5px 0 #4c1d95, 0 0 22px rgba(168, 85, 247, 0.55);
+}
+.btn-purple:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #4c1d95;
+}
+
 /* Footer */
 footer {
   text-align: center;
@@ -343,7 +370,7 @@ footer {
     <p class="subtitle">Escolha seu desafio favorito e divirta-se direto no navegador em qualquer dispositivo.</p>
 
     <div class="top-stats">
-      <div class="stat-pill">🕹️ Total de Jogos: <b>2</b></div>
+      <div class="stat-pill">🕹️ Total de Jogos: <b>3</b></div>
       <div class="stat-pill">⚡ Tecnologias: <b>HTML5 · Canvas · WebAudio</b></div>
       <div class="stat-pill">📱 Suporte: <b>PC & Mobile</b></div>
     </div>
@@ -395,6 +422,31 @@ footer {
           <span class="tag">Modos Personalizáveis</span>
         </div>
         <a href="Quadrados.io.html" class="btn-play btn-pink">
+          JOGAR AGORA ▶
+        </a>
+      </div>
+    </article>
+
+    <!-- Jogo 3: NEON SURVIVOR -->
+    <article class="game-card">
+      <div class="card-banner banner-survivor">
+        <span class="pill-type pill-survivor">Sobrevivência Roguelite</span>
+        <div class="banner-badge">
+          <div class="icon-box icon-survivor">🚀</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <h2>NEON SURVIVOR</h2>
+        <p class="card-desc">
+          Sobreviva a hordas cósmicas infinitas! Disparo automático, suba de nível, escolha upgrades e combine lasers, mísseis e escudos de plasma.
+        </p>
+        <div class="tag-list">
+          <span class="tag">Auto-Shooter Roguelite</span>
+          <span class="tag">Sistema de Upgrades</span>
+          <span class="tag">Ondas & Chefes</span>
+          <span class="tag">Dash Evasivo</span>
+        </div>
+        <a href="neon-survivor.html" class="btn-play btn-purple">
           JOGAR AGORA ▶
         </a>
       </div>
