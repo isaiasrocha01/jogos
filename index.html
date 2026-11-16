@@ -349,6 +349,59 @@ p.subtitle {
   box-shadow: 0 1px 0 #4c1d95;
 }
 
+.banner-bubble {
+  background: radial-gradient(circle at 50% 40%, rgba(79, 209, 197, 0.25), #0b1526 80%);
+}
+.icon-bubble {
+  background: linear-gradient(135deg, #4fd1c5, #1d7f78);
+  border: 2px solid #a8f2ea;
+  box-shadow: 0 0 20px rgba(79, 209, 197, 0.5);
+}
+.banner-collapse {
+  background: radial-gradient(circle at 50% 40%, rgba(255, 201, 60, 0.25), #1f1807 80%);
+}
+.icon-collapse {
+  background: linear-gradient(135deg, #ffc93c, #c78800);
+  border: 2px solid #ffe885;
+  box-shadow: 0 0 20px rgba(255, 201, 60, 0.5);
+}
+.banner-memory {
+  background: radial-gradient(circle at 50% 40%, rgba(56, 239, 125, 0.25), #091c14 80%);
+}
+.icon-memory {
+  background: linear-gradient(135deg, #38ef7d, #0e853f);
+  border: 2px solid #a0f7c2;
+  box-shadow: 0 0 20px rgba(56, 239, 125, 0.5);
+}
+.btn-gold {
+  background: linear-gradient(135deg, #ffc93c, #d49000);
+  color: #061e1b;
+  font-weight: 700;
+  box-shadow: 0 4px 0 #7a4f00, 0 0 16px rgba(255, 201, 60, 0.35);
+}
+.btn-gold:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 5px 0 #7a4f00, 0 0 22px rgba(255, 201, 60, 0.55);
+}
+.btn-gold:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #7a4f00;
+}
+.btn-green {
+  background: linear-gradient(135deg, #38ef7d, #149c4e);
+  color: #041a10;
+  font-weight: 700;
+  box-shadow: 0 4px 0 #09592b, 0 0 16px rgba(56, 239, 125, 0.35);
+}
+.btn-green:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 5px 0 #09592b, 0 0 22px rgba(56, 239, 125, 0.55);
+}
+.btn-green:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #09592b;
+}
+
 /* Footer */
 footer {
   text-align: center;
@@ -370,7 +423,7 @@ footer {
     <p class="subtitle">Escolha seu desafio favorito e divirta-se direto no navegador em qualquer dispositivo.</p>
 
     <div class="top-stats">
-      <div class="stat-pill">🕹️ Total de Jogos: <b>3</b></div>
+      <div class="stat-pill">🕹️ Total de Jogos: <b>6</b></div>
       <div class="stat-pill">⚡ Tecnologias: <b>HTML5 · Canvas · WebAudio</b></div>
       <div class="stat-pill">📱 Suporte: <b>PC & Mobile</b></div>
     </div>
@@ -447,6 +500,81 @@ footer {
           <span class="tag">Dash Evasivo</span>
         </div>
         <a href="neon-survivor.html" class="btn-play btn-purple">
+          JOGAR AGORA ▶
+        </a>
+      </div>
+    </article>
+
+    <!-- Jogo 4: Pet Bubble Pop -->
+    <article class="game-card">
+      <div class="card-banner banner-bubble">
+        <span class="pill-type pill-puzzle">Bubble Shooter</span>
+        <div class="banner-badge">
+          <div class="icon-box icon-bubble">🔮</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <h2>PET BUBBLE POP</h2>
+        <p class="card-desc">
+          Mire e dispare esferas de brinquedo! Combine 3 ou mais cores para estourar o teto e não deixe as bolhas passarem da linha limite.
+        </p>
+        <div class="tag-list">
+          <span class="tag">Disparador de Bolhas</span>
+          <span class="tag">Troca de Esferas</span>
+          <span class="tag">Top Ranking</span>
+          <span class="tag">Física de Ricochete</span>
+        </div>
+        <a href="pet-bubble-pop.html" class="btn-play btn-cyan">
+          JOGAR AGORA ▶
+        </a>
+      </div>
+    </article>
+
+    <!-- Jogo 5: Pet Block Collapse -->
+    <article class="game-card">
+      <div class="card-banner banner-collapse">
+        <span class="pill-type pill-action">Blocos & Poderes</span>
+        <div class="banner-badge">
+          <div class="icon-box icon-collapse">🧱</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <h2>PET BLOCK COLLAPSE</h2>
+        <p class="card-desc">
+          Clique em grupos de blocos para fazê-los colapsar! Use bombas, foguetes, abelhas, aviões e ovnis para limpar todo o tabuleiro.
+        </p>
+        <div class="tag-list">
+          <span class="tag">Quebra-cabeça Colapso</span>
+          <span class="tag">5 Ferramentas Especiais</span>
+          <span class="tag">Combos Recompensados</span>
+          <span class="tag">Sistema de Salvo</span>
+        </div>
+        <a href="pet-block-collapse.html" class="btn-play btn-gold">
+          JOGAR AGORA ▶
+        </a>
+      </div>
+    </article>
+
+    <!-- Jogo 6: Pet Memory Match -->
+    <article class="game-card">
+      <div class="card-banner banner-memory">
+        <span class="pill-type pill-puzzle">Memória & Concentração</span>
+        <div class="banner-badge">
+          <div class="icon-box icon-memory">🧠</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <h2>PET MEMORY MATCH</h2>
+        <p class="card-desc">
+          Vire as cartas e encontre os pares de pets idênticos! Acerte em sequência para disparar combos multiplicadores e bater o recorde.
+        </p>
+        <div class="tag-list">
+          <span class="tag">Jogo da Memória</span>
+          <span class="tag">Multiplicador de Combo</span>
+          <span class="tag">Contador de Movimentos</span>
+          <span class="tag">Cartas Estilizadas</span>
+        </div>
+        <a href="pet-memory-match.html" class="btn-play btn-green">
           JOGAR AGORA ▶
         </a>
       </div>
