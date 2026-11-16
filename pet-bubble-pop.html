@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Pet Bubble Pop 🔮 — Quadrados Arcade</title>
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#10142b;--ink:#f2ead3;--dim:#9aa0c4;--hero:#4fd1c5;--panel:#232850;--line:#3a4180;
+  --coin:#ffc93c;--danger:#ff5d73;--success:#38ef7d;
+  color-scheme:dark;box-sizing:border-box;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{
+  height:100%;min-height:100%;margin:0;overflow-x:hidden;
+  background:var(--bg);color:var(--ink);
+  font-family:'Silkscreen',ui-monospace,Menlo,monospace;
+  touch-action:none;-webkit-user-select:none;user-select:none;
+}
+/* Scanlines discretas estilo Quadrados.io */
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:90;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.08) 3px,rgba(0,0,0,.08) 6px);
+}
+.wrap{
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;
+  padding:calc(12px + env(safe-area-inset-top,0px)) 12px calc(14px + env(safe-area-inset-bottom,0px));
+}
+header{text-align:center;margin-bottom:12px}
+h1{
+  font-size:clamp(22px,5vw,34px);letter-spacing:.05em;color:var(--hero);
+  text-shadow:3px 3px 0 #0d4a52;margin-bottom:4px;
+}
+.sub{color:var(--dim);font-size:12px;letter-spacing:.05em}
+
+#main-container{
+  display:flex;gap:18px;justify-content:center;align-items:flex-start;
+  flex-wrap:wrap;width:min(900px,100%);
+}
+#game-card{
+  background:var(--panel);border:2px solid var(--line);
+  padding:14px;box-shadow:0 12px 30px rgba(0,0,0,.4);
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+}
+#ui-bar{
+  width:100%;display:flex;justify-content:space-between;align-items:center;
+  gap:10px;background:rgba(10,12,30,.65);padding:8px 12px;border:1.5px solid var(--line);
+  font-size:13px;
+}
+.stat-box b{color:var(--coin)}
+.preview-wrap{display:flex;align-items:center;gap:8px}
+.preview-ball{
+  width:26px;height:26px;border-radius:50%;border:2px solid #fff;
+  box-shadow:0 0 10px rgba(255,255,255,.3);transition:background .2s;
+}
+
+canvas{
+  background:#161b3a;border:2px solid var(--line);
+  box-shadow:inset 0 0 20px rgba(0,0,0,.5);display:block;
+  max-width:100%;height:auto;
+}
+
+.instructions{
+  font-size:11px;color:var(--dim);text-align:center;
+  line-height:1.5;max-width:440px;
+}
+
+.btn-row{display:flex;gap:10px;width:100%;justify-content:center;margin-top:4px}
+button, a.btn{
+  font:inherit;font-size:13px;padding:9px 18px;cursor:pointer;
+  border-radius:0;text-decoration:none;display:inline-flex;align-items:center;gap:6px;
+  border:2px solid var(--line);transition:all .12s;box-shadow:0 4px 0 #0e1030;
+}
+button:active, a.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #0e1030}
+.btn-swap{background:var(--hero);color:#06303a;border-color:#a8f2ea;font-weight:700}
+.btn-back{background:rgba(16,20,43,.8);color:var(--dim)}
+.btn-back:hover{color:var(--ink);border-color:var(--hero)}
+
+#leaderboard-panel{
+  width:260px;background:var(--panel);border:2px solid var(--line);
+  padding:14px;box-shadow:0 12px 30px rgba(0,0,0,.4);
+}
+#leaderboard-panel h2{
+  font-size:16px;color:var(--hero);margin-bottom:10px;border-bottom:1.5px solid var(--line);
+  padding-bottom:6px;display:flex;align-items:center;gap:6px;
+}
+#leaderboard-list{list-style:none;display:grid;gap:6px;font-size:12px}
+#leaderboard-list li{
+  display:flex;justify-content:space-between;align-items:center;
+  background:rgba(10,12,30,.5);padding:6px 8px;border-left:3px solid var(--hero);
+}
+
+/* Modal Game Over */
+#modal-gov{
+  position:fixed;inset:0;background:rgba(10,12,30,.88);backdrop-filter:blur(5px);
+  z-index:99;display:none;align-items:center;justify-content:center;padding:20px;
+}
+.modal-box{
+  background:var(--panel);border:2px solid var(--hero);padding:24px;
+  text-align:center;max-width:380px;width:100%;box-shadow:0 0 40px rgba(79,209,197,.3);
+}
+.modal-box h3{color:var(--danger);font-size:24px;margin-bottom:10px}
+.modal-box p{color:var(--dim);font-size:13px;margin-bottom:16px;line-height:1.6}
+.modal-box input{
+  width:100%;font:inherit;font-size:15px;padding:10px;text-align:center;
+  background:#10142b;color:var(--ink);border:2px solid var(--line);margin-bottom:14px;
+}
+.modal-box input:focus{outline:none;border-color:var(--hero)}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>🔮 PET BUBBLE POP</h1>
+    <div class="sub">Dispare as esferas de brinquedo e combine 3 ou mais!</div>
+  </header>
+
+  <div id="main-container">
+    <div id="game-card">
+      <div id="ui-bar">
+        <div class="stat-box">PONTOS: <b id="score">0</b></div>
+        <div class="preview-wrap">
+          <span>PRÓXIMO:</span>
+          <div id="next-bubble-preview" class="preview-ball"></div>
+        </div>
+      </div>
+
+      <canvas id="game" width="440" height="480"></canvas>
+
+      <div class="instructions">
+        Mire com o Mouse/Toque • Clique para disparar<br>
+        [Espaço] ou [Botão Direito] para trocar de esfera
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-swap" onclick="swapBalls()">🔄 TROCAR ESFERA</button>
+        <a href="index.html" class="btn btn-back">↩ VOLTAR AO MENU</a>
+      </div>
+    </div>
+
+    <div id="leaderboard-panel">
+      <h2>🏆 TOP PETS</h2>
+      <ol id="leaderboard-list"></ol>
+    </div>
+  </div>
+</div>
+
+<div id="modal-gov">
+  <div class="modal-box">
+    <h3>FIM DE JOGO!</h3>
+    <p>As esferas ultrapassaram a linha limite!<br>Pontuação Final: <b id="gov-score" style="color:var(--coin)">0</b></p>
+    <input type="text" id="pet-name-input" maxlength="12" placeholder="Nome do seu Pet">
+    <button class="btn-swap" style="width:100%;padding:12px" onclick="saveRecordAndRestart()">SALVAR RECORDE ▶</button>
+  </div>
+</div>
+
+<script>
+// ========================================================
+// PET BUBBLE POP — ESTILO QUADRADOS.IO
+// ========================================================
+const COLORS = ["#ff5d73", "#4fd1c5", "#a855f7", "#ffc93c", "#38ef7d"];
+
+let canvas, ctx, scoreEl, nextBubblePreview;
+let score = 0, gameOver = false, shotCount = 0;
+const SHOTS_TO_DROP = 5, rowsInitial = 5, BUBBLE_RADIUS = 20;
+const maxRows = 12, PADDING_X = 40;
+let cols, grid = [], activeBullet = null;
+const DEADLINE_ROW = 10;
+let cannon = { x: 0, y: 0, angle: -Math.PI/2, currentBallColor: "", nextBallColor: "" };
+
+let AC;
+function beep(f, d=0.08, ty='square', v=0.03, ramp){
+  try {
+    AC = AC || new AudioContext();
+    const o = AC.createOscillator(), k = AC.createGain(), n = AC.currentTime;
+    o.type = ty; o.frequency.setValueAtTime(f, n);
+    if(ramp) o.frequency.exponentialRampToValueAtTime(ramp, n+d);
+    k.gain.setValueAtTime(v, n); k.gain.exponentialRampToValueAtTime(0.001, n+d);
+    o.connect(k).connect(AC.destination); o.start(); o.stop(n+d);
+  } catch(e){}
+}
+
+function getRandomColor() { return COLORS[Math.floor(Math.random() * COLORS.length)]; }
+function updatePreview() { if(nextBubblePreview) nextBubblePreview.style.backgroundColor = cannon.nextBallColor; }
+
+function initBubbleGame() {
+    canvas = document.getElementById("game");
+    if (!canvas) return;
+    ctx = canvas.getContext("2d");
+    scoreEl = document.getElementById("score");
+    nextBubblePreview = document.getElementById("next-bubble-preview");
+
+    cols = Math.floor((canvas.width - PADDING_X * 2) / (BUBBLE_RADIUS * 2));
+    cannon.x = canvas.width / 2;
+    cannon.y = canvas.height - 45;
+
+    cannon.currentBallColor = getRandomColor();
+    cannon.nextBallColor = getRandomColor();
+    gameOver = false; shotCount = 0; score = 0;
+    if(scoreEl) scoreEl.textContent = score; 
+    grid = [];
+    
+    for (let r = 0; r < maxRows; r++) {
+        grid[r] = [];
+        for (let c = 0; c < cols; c++) { grid[r][c] = { x: 0, y: 0, color: null, active: false }; }
+    }
+    for (let r = 0; r < rowsInitial; r++) {
+        for (let c = 0; c < cols; c++) { grid[r][c].active = true; grid[r][c].color = getRandomColor(); }
+    }
+    recalculateGridPositions();
+    updatePreview();
+    renderLeaderboard("bubble_records");
+    setupBubbleEvents();
+    bubbleGameLoop();
+}
+
+function recalculateGridPositions() {
+    const totalGridWidth = cols * (BUBBLE_RADIUS * 2);
+    const startX = (canvas.width - totalGridWidth) / 2 + BUBBLE_RADIUS;
+    for (let r = 0; r < maxRows; r++) {
+        for (let c = 0; c < cols; c++) {
+            let xOffset = (r % 2 === 1) ? BUBBLE_RADIUS : 0;
+            grid[r][c].x = startX + c * (BUBBLE_RADIUS * 2) + xOffset;
+            grid[r][c].y = r * (BUBBLE_RADIUS * 1.732) + BUBBLE_RADIUS + 15;
+        }
+    }
+}
+
+function moveRowsDown() {
+    if (gameOver) return;
+    for (let r = maxRows - 1; r > 0; r--) {
+        for (let c = 0; c < cols; c++) {
+            grid[r][c].active = grid[r - 1][c].active;
+            grid[r][c].color = grid[r - 1][c].color;
+        }
+    }
+    for (let c = 0; c < cols; c++) { grid[0][c].active = true; grid[0][c].color = getRandomColor(); }
+    recalculateGridPositions();
+    beep(200, 0.15, 'sawtooth', 0.05, 100);
+    if (checkGameOverCondition()) triggerGameOver();
+}
+
+function checkGameOverCondition() {
+    for (let r = DEADLINE_ROW; r < maxRows; r++) {
+        for (let c = 0; c < cols; c++) { if (grid[r][c].active) return true; }
+    }
+    return false;
+}
+
+function triggerGameOver() {
+    gameOver = true;
+    document.getElementById("gov-score").textContent = score;
+    document.getElementById("modal-gov").style.display = "flex";
+    beep(180, 0.35, 'sawtooth', 0.06, 50);
+}
+
+function saveRecordAndRestart(){
+    let name = document.getElementById("pet-name-input").value.trim();
+    if(!name) name = "Bichinho";
+    let records = JSON.parse(localStorage.getItem("bubble_records")) || [];
+    records.push({ name: name.substring(0, 12), score: score });
+    records.sort((a, b) => b.score - a.score);
+    records = records.slice(0, 5);
+    localStorage.setItem("bubble_records", JSON.stringify(records));
+    document.getElementById("modal-gov").style.display = "none";
+    initBubbleGame();
+}
+
+function renderLeaderboard(keyName) {
+    const leaderboardListEl = document.getElementById("leaderboard-list");
+    if(!leaderboardListEl) return;
+    let records = JSON.parse(localStorage.getItem(keyName)) || [];
+    leaderboardListEl.innerHTML = "";
+    records.forEach(rec => {
+        const li = document.createElement("li");
+        li.innerHTML = `<span>🐾 ${rec.name}</span><b style="color:var(--coin)">${rec.score}</b>`;
+        leaderboardListEl.appendChild(li);
+    });
+    if(records.length === 0) leaderboardListEl.innerHTML = "<p style='font-size:11px;color:var(--dim);text-align:center;'>Nenhum pet registrado!</p>";
+}
+
+function setupBubbleEvents() {
+    if (!canvas) return;
+    canvas.onmousemove = handleBubbleMouseMove;
+    canvas.oncontextmenu = handleBubbleContextMenu;
+    canvas.onclick = handleBubbleClick;
+    window.onkeydown = handleBubbleKeyDown;
+
+    // Suporte mobile touch
+    canvas.ontouchmove = e => {
+      e.preventDefault();
+      const t = e.touches[0];
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = (t.clientX - rect.left) * (canvas.width / rect.width);
+      const mouseY = (t.clientY - rect.top) * (canvas.height / rect.height);
+      cannon.angle = Math.atan2(mouseY - cannon.y, mouseX - cannon.x);
+      if (cannon.angle > -0.2) cannon.angle = -0.2;
+      if (cannon.angle < -Math.PI + 0.2) cannon.angle = -Math.PI + 0.2;
+    };
+    canvas.ontouchend = e => {
+      if(!activeBullet && !gameOver) fireBullet();
+    };
+}
+
+function handleBubbleMouseMove(e) {
+    if (gameOver || !canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    let mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
+    let mouseY = (e.clientY - rect.top) * (canvas.height / rect.height);
+    cannon.angle = Math.atan2(mouseY - cannon.y, mouseX - cannon.x);
+    if (cannon.angle > -0.2) cannon.angle = -0.2;
+    if (cannon.angle < -Math.PI + 0.2) cannon.angle = -Math.PI + 0.2;
+}
+
+function swapBalls() {
+    if (gameOver) return;
+    let temp = cannon.currentBallColor;
+    cannon.currentBallColor = cannon.nextBallColor;
+    cannon.nextBallColor = temp;
+    updatePreview();
+    beep(450, 0.05, 'sine', 0.03, 600);
+}
+
+function handleBubbleContextMenu(e) { e.preventDefault(); swapBalls(); }
+function handleBubbleKeyDown(e) { if (e.code === "Space") { e.preventDefault(); swapBalls(); } }
+
+function fireBullet(){
+    activeBullet = { x: cannon.x, y: cannon.y, dx: Math.cos(cannon.angle) * 15, dy: Math.sin(cannon.angle) * 15, color: cannon.currentBallColor };
+    shotCount++;
+    cannon.currentBallColor = cannon.nextBallColor;
+    cannon.nextBallColor = getRandomColor();
+    updatePreview();
+    beep(600, 0.06, 'triangle', 0.04, 900);
+}
+
+function handleBubbleClick(e) {
+    if (e.button !== 0 || activeBullet || gameOver) return; 
+    fireBullet();
+}
+
+function getNeighbors(r, c) {
+    let neighbors = [[r, c-1], [r, c+1], [r-1, c], [r+1, c]];
+    if (r % 2 === 1) neighbors.push([r-1, c+1], [r+1, c+1]);
+    else neighbors.push([r-1, c-1], [r+1, c-1]);
+    return neighbors.filter(([nr, nc]) => nr >= 0 && nr < maxRows && nc >= 0 && nc < cols);
+}
+
+function dropDanglingBubbles() {
+    let visited = Array(maxRows).fill().map(() => Array(cols).fill(false));
+    let queue = [];
+    for (let c = 0; c < cols; c++) { if (grid[0][c].active) { queue.push([0, c]); visited[0][c] = true; } }
+    while (queue.length > 0) {
+        let [r, c] = queue.shift();
+        for (let [nr, nc] of getNeighbors(r, c)) {
+            if (grid[nr][nc].active && !visited[nr][nc]) { visited[nr][nc] = true; queue.push([nr, nc]); }
+        }
+    }
+    let droppedCount = 0;
+    for (let r = 0; r < maxRows; r++) {
+        for (let c = 0; c < cols; c++) {
+            if (grid[r][c].active && !visited[r][c]) { grid[r][c].active = false; grid[r][c].color = null; score += 20; droppedCount++; }
+        }
+    }
+    if (droppedCount > 0) {
+        if(scoreEl) scoreEl.textContent = score;
+        beep(750, 0.12, 'square', 0.05, 1200);
+    }
+}
+
+function checkAndPopBubble(startRow, startCol, targetColor) {
+    let queue = [[startRow, startCol]], matches = [];
+    let visited = Array(maxRows).fill().map(() => Array(cols).fill(false));
+    while (queue.length > 0) {
+        let [r, c] = queue.shift();
+        if (visited[r][c] || !grid[r][c].active || grid[r][c].color !== targetColor) continue;
+        visited[r][c] = true; matches.push([r, c]);
+        for (let [nr, nc] of getNeighbors(r, c)) queue.push([nr, nc]);
+    }
+    if (matches.length >= 3) { 
+        matches.forEach(([r, c]) => { grid[r][c].active = false; grid[r][c].color = null; score += 10; });
+        if(scoreEl) scoreEl.textContent = score;
+        beep(520, 0.1, 'square', 0.04, 1040);
+        dropDanglingBubbles();
+    }
+}
+
+function snapBubbleToGrid(bullet) {
+    let closestRow = -1, closestCol = -1, minDist = Infinity;
+    for (let r = 0; r < maxRows; r++) {
+        for (let c = 0; c < cols; c++) {
+            let cell = grid[r][c]; if (cell.active) continue;
+            let d = Math.hypot(cell.x - bullet.x, cell.y - bullet.y);
+            if (d < minDist) { minDist = d; closestRow = r; closestCol = c; }
+        }
+    }
+    if (closestRow !== -1 && closestCol !== -1) {
+        grid[closestRow][closestCol].active = true;
+        grid[closestRow][closestCol].color = bullet.color;
+        if (checkGameOverCondition()) { triggerGameOver(); return; }
+        checkAndPopBubble(closestRow, closestCol, bullet.color);
+        if (shotCount >= SHOTS_TO_DROP) { shotCount = 0; setTimeout(moveRowsDown, 200); }
+    }
+}
+
+function updateBubble() {
+    if (gameOver || !canvas) return;
+    if (activeBullet) {
+        activeBullet.x += activeBullet.dx; activeBullet.y += activeBullet.dy;
+        if (activeBullet.x - BUBBLE_RADIUS <= 0) { activeBullet.x = BUBBLE_RADIUS; activeBullet.dx *= -1; beep(350, 0.03, 'sine', 0.02); }
+        if (activeBullet.x + BUBBLE_RADIUS >= canvas.width) { activeBullet.x = canvas.width - BUBBLE_RADIUS; activeBullet.dx *= -1; beep(350, 0.03, 'sine', 0.02); }
+        if (activeBullet.y - BUBBLE_RADIUS <= 8) { let b = activeBullet; activeBullet = null; snapBubbleToGrid(b); return; }
+        for (let r = 0; r < maxRows; r++) {
+            for (let c = 0; c < cols; c++) {
+                let bubble = grid[r][c]; if (!bubble.active) continue;
+                if (Math.hypot(bubble.x - activeBullet.x, bubble.y - activeBullet.y) < BUBBLE_RADIUS * 1.65) {
+                    let b = activeBullet; activeBullet = null; snapBubbleToGrid(b); return;
+                }
+            }
+        }
+    }
+}
+
+function drawPetBall(x, y, radius, color) {
+    ctx.save();
+    // Esfera estilizada estilo Quadrados.io
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(x, y, radius - 1, 0, Math.PI * 2); ctx.fill();
+
+    // Borda escura e borda interna
+    ctx.strokeStyle = "rgba(0,0,0,0.3)"; ctx.lineWidth = 2; ctx.stroke();
+    
+    // Brilho superior
+    ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+    ctx.beginPath(); ctx.arc(x - 4, y - 4, radius * 0.4, 0, Math.PI * 2); ctx.fill();
+
+    // Pegadas de Pet fofas no centro
+    ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
+    ctx.beginPath(); ctx.arc(x, y + 2, radius * 0.3, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x - 5, y - 4, radius * 0.12, 0, Math.PI * 2);
+    ctx.arc(x, y - 7, radius * 0.12, 0, Math.PI * 2);
+    ctx.arc(x + 5, y - 4, radius * 0.12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+}
+
+function drawBubbleGame() {
+    if (!canvas) return;
+    
+    // Fundo da arena estilo Quadrados.io
+    ctx.fillStyle = "#161b3a"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Grade da arena
+    ctx.strokeStyle = "rgba(120, 130, 200, 0.14)"; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    for (let x = 0; x <= canvas.width; x += 40) { ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); }
+    for (let y = 0; y <= canvas.height; y += 40) { ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); }
+    ctx.stroke();
+
+    // Linha limite perigo
+    let deadlineY = DEADLINE_ROW * (BUBBLE_RADIUS * 1.732) + 20;
+    ctx.strokeStyle = "#ff5d73"; ctx.lineWidth = 2; ctx.setLineDash([8, 6]);
+    ctx.beginPath(); ctx.moveTo(10, deadlineY); ctx.lineTo(canvas.width - 10, deadlineY); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = "#ff5d73"; ctx.font = "700 11px Silkscreen, monospace"; ctx.textAlign = "left";
+    ctx.fillText("! LINHA LIMITE !", 15, deadlineY - 6);
+
+    // Bolhas no Grid
+    for (let r = 0; r < maxRows; r++) {
+        for (let c = 0; c < cols; c++) {
+            let b = grid[r][c]; if (b.active) drawPetBall(b.x, b.y, BUBBLE_RADIUS, b.color);
+        }
+    }
+
+    // Mira tracejada
+    if (!activeBullet && !gameOver) {
+        ctx.save(); ctx.strokeStyle = "rgba(79, 209, 197, 0.5)"; ctx.lineWidth = 2; ctx.setLineDash([6, 6]);
+        ctx.beginPath(); ctx.moveTo(cannon.x, cannon.y); ctx.lineTo(cannon.x + Math.cos(cannon.angle) * 160, cannon.y + Math.sin(cannon.angle) * 160);
+        ctx.stroke(); ctx.restore();
+    }
+
+    // Projétil ativo
+    if (activeBullet) drawPetBall(activeBullet.x, activeBullet.y, BUBBLE_RADIUS, activeBullet.color);
+
+    // Próxima descida contador
+    ctx.fillStyle = "#9aa0c4"; ctx.font = "11px Silkscreen, monospace"; ctx.textAlign = "center";
+    ctx.fillText(`DESCIDA EM: ${SHOTS_TO_DROP - shotCount}`, cannon.x, cannon.y + 34);
+
+    // Canhão Quadrado Sci-Fi
+    ctx.save();
+    ctx.translate(cannon.x, cannon.y);
+    ctx.rotate(cannon.angle);
+    ctx.fillStyle = "#232850"; ctx.strokeStyle = "#4fd1c5"; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.rect(0, -12, 44, 24); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = "#4fd1c5"; ctx.fillRect(36, -8, 6, 16);
+    ctx.restore();
+
+    // Bola pronta no canhão
+    if (!gameOver) drawPetBall(cannon.x, cannon.y, BUBBLE_RADIUS, cannon.currentBallColor);
+}
+
+function bubbleGameLoop() {
+    if(document.getElementById("game")) {
+        updateBubble();
+        drawBubbleGame();
+        requestAnimationFrame(bubbleGameLoop);
+    }
+}
+
+window.onload = () => { initBubbleGame(); };
+</script>
+</body>
+</html>

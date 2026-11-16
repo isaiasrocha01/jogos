@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Pet Block Collapse 🧱 — Quadrados Arcade</title>
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#10142b;--ink:#f2ead3;--dim:#9aa0c4;--hero:#4fd1c5;--panel:#232850;--line:#3a4180;
+  --coin:#ffc93c;--danger:#ff5d73;--success:#38ef7d;
+  color-scheme:dark;box-sizing:border-box;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{
+  height:100%;min-height:100%;margin:0;overflow-x:hidden;
+  background:var(--bg);color:var(--ink);
+  font-family:'Silkscreen',ui-monospace,Menlo,monospace;
+  touch-action:none;-webkit-user-select:none;user-select:none;
+}
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:90;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.08) 3px,rgba(0,0,0,.08) 6px);
+}
+#custom-cursor-tool{
+  position:fixed;pointer-events:none;font-size:2rem;z-index:9999;
+  display:none;transform:translate(-50%,-50%);
+}
+.wrap{
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;
+  padding:calc(12px + env(safe-area-inset-top,0px)) 12px calc(14px + env(safe-area-inset-bottom,0px));
+}
+header{text-align:center;margin-bottom:12px}
+h1{
+  font-size:clamp(22px,5vw,34px);letter-spacing:.05em;color:var(--hero);
+  text-shadow:3px 3px 0 #0d4a52;margin-bottom:4px;
+}
+.sub{color:var(--dim);font-size:12px;letter-spacing:.05em}
+
+#main-container{
+  display:flex;gap:18px;justify-content:center;align-items:flex-start;
+  flex-wrap:wrap;width:min(900px,100%);
+}
+.collapse-container{
+  background:var(--panel);border:2px solid var(--line);
+  padding:14px;box-shadow:0 12px 30px rgba(0,0,0,.4);
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+}
+.collapse-ui{
+  width:100%;display:flex;justify-content:space-between;align-items:center;
+  gap:10px;background:rgba(10,12,30,.65);padding:8px 12px;border:1.5px solid var(--line);
+  font-size:13px;
+}
+.stat-box b{color:var(--coin)}
+
+.game-with-tools{
+  display:flex;gap:10px;align-items:center;justify-content:center;
+}
+#tools-sidebar{
+  display:flex;flex-direction:column;gap:8px;
+}
+.tool-btn{
+  width:46px;height:46px;background:rgba(16,20,43,.85);border:2px solid var(--line);
+  color:var(--ink);font-size:18px;cursor:pointer;position:relative;
+  display:grid;place-items:center;transition:all .12s;box-shadow:0 4px 0 #0e1030;
+}
+.tool-btn:active{transform:translateY(3px);box-shadow:0 1px 0 #0e1030}
+.tool-btn.selected{
+  border-color:var(--coin);background:rgba(255,201,60,.2);
+  box-shadow:0 0 12px rgba(255,201,60,.4);
+}
+.tool-count{
+  position:absolute;right:-4px;bottom:-4px;background:#ff5d73;color:#fff;
+  font-family:'Silkscreen',monospace;font-size:10px;font-weight:700;
+  padding:1px 5px;border-radius:4px;border:1px solid #fff;
+}
+
+canvas{
+  background:#161b3a;border:2px solid var(--line);
+  box-shadow:inset 0 0 20px rgba(0,0,0,.5);display:block;
+  max-width:100%;height:auto;
+}
+
+.instructions{
+  font-size:11px;color:var(--dim);text-align:center;
+  line-height:1.5;max-width:480px;min-height:32px;
+}
+
+.btn-row{display:flex;gap:10px;width:100%;justify-content:center;margin-top:4px}
+button.action-btn, a.btn{
+  font:inherit;font-size:13px;padding:9px 18px;cursor:pointer;
+  border-radius:0;text-decoration:none;display:inline-flex;align-items:center;gap:6px;
+  border:2px solid var(--line);transition:all .12s;box-shadow:0 4px 0 #0e1030;
+}
+button.action-btn:active, a.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #0e1030}
+.btn-reset{background:var(--coin);color:#06303a;border-color:#ffe885;font-weight:700}
+.btn-back{background:rgba(16,20,43,.8);color:var(--dim)}
+.btn-back:hover{color:var(--ink);border-color:var(--hero)}
+
+#leaderboard-panel{
+  width:260px;background:var(--panel);border:2px solid var(--line);
+  padding:14px;box-shadow:0 12px 30px rgba(0,0,0,.4);
+}
+#leaderboard-panel h2{
+  font-size:16px;color:var(--hero);margin-bottom:10px;border-bottom:1.5px solid var(--line);
+  padding-bottom:6px;display:flex;align-items:center;gap:6px;
+}
+#leaderboard-list{list-style:none;display:grid;gap:6px;font-size:12px}
+#leaderboard-list li{
+  display:flex;justify-content:space-between;align-items:center;
+  background:rgba(10,12,30,.5);padding:6px 8px;border-left:3px solid var(--hero);
+}
+
+/* Modal Game Over */
+#modal-gov{
+  position:fixed;inset:0;background:rgba(10,12,30,.88);backdrop-filter:blur(5px);
+  z-index:99;display:none;align-items:center;justify-content:center;padding:20px;
+}
+.modal-box{
+  background:var(--panel);border:2px solid var(--hero);padding:24px;
+  text-align:center;max-width:380px;width:100%;box-shadow:0 0 40px rgba(79,209,197,.3);
+}
+.modal-box h3{color:var(--danger);font-size:24px;margin-bottom:10px}
+.modal-box p{color:var(--dim);font-size:13px;margin-bottom:16px;line-height:1.6}
+.modal-box input{
+  width:100%;font:inherit;font-size:15px;padding:10px;text-align:center;
+  background:#10142b;color:var(--ink);border:2px solid var(--line);margin-bottom:14px;
+}
+.modal-box input:focus{outline:none;border-color:var(--hero)}
+</style>
+</head>
+<body>
+
+<div id="custom-cursor-tool"></div>
+
+<div class="wrap">
+  <header>
+    <h1>🧱 PET BLOCK COLLAPSE</h1>
+    <div class="sub">Destrua grupos de blocos idênticos e use itens especiais!</div>
+  </header>
+
+  <div id="main-container">
+    <div class="collapse-container">
+      <div class="collapse-ui">
+        <div class="stat-box">PONTOS: <b id="collapse-score">0</b></div>
+        <div class="stat-box" style="font-size:11px;color:var(--dim)">OBJETIVO: <span style="color:var(--hero)">LIMPAR TABULEIRO</span></div>
+      </div>
+
+      <div class="game-with-tools">
+        <div id="tools-sidebar">
+          <button class="tool-btn" id="tool-bomb" onclick="selectTool('bomb')">💣<span class="tool-count" id="count-bomb">2</span></button>
+          <button class="tool-btn" id="tool-rocket" onclick="selectTool('rocket')">🚀<span class="tool-count" id="count-rocket">2</span></button>
+          <button class="tool-btn" id="tool-bee" onclick="selectTool('bee')">🐝<span class="tool-count" id="count-bee">2</span></button>
+          <button class="tool-btn" id="tool-plane" onclick="selectTool('plane')">✈️<span class="tool-count" id="count-plane">2</span></button>
+          <button class="tool-btn" id="tool-ufo" onclick="selectTool('ufo')">🛸<span class="tool-count" id="count-ufo">1</span></button>
+        </div>
+
+        <canvas id="canvas-collapse" width="480" height="480"></canvas>
+      </div>
+
+      <div class="instructions" id="collapse-instructions">Combine 5+ blocos para ganhar itens! • Clique para usar o poder</div>
+
+      <div class="btn-row">
+        <a href="index.html" class="btn btn-back">↩ MENU</a>
+        <button onclick="resetCurrentGameBtn()" class="action-btn btn-reset">🔄 REINICIAR</button>
+      </div>
+    </div>
+
+    <div id="leaderboard-panel">
+      <h2>🏆 TOP PETS</h2>
+      <ol id="leaderboard-list"></ol>
+    </div>
+  </div>
+</div>
+
+<div id="modal-gov">
+  <div class="modal-box">
+    <h3>FIM DE JOGO!</h3>
+    <p>Acabaram os movimentos e as ferramentas!<br>Pontuação Final: <b id="gov-score" style="color:var(--coin)">0</b></p>
+    <input type="text" id="pet-name-input" maxlength="12" placeholder="Nome do seu Pet">
+    <button class="action-btn btn-reset" style="width:100%;padding:12px" onclick="saveRecordAndRestart()">SALVAR RECORDE ▶</button>
+  </div>
+</div>
+
+<script>
+// ========================================================
+// PET BLOCK COLLAPSE — ESTILO QUADRADOS.IO
+// ========================================================
+const COLORS = ["#ff5d73", "#4fd1c5", "#a855f7", "#ffc93c", "#38ef7d"]; 
+
+let canvasCol, ctxCol, collapseScoreEl;
+const COLLAPSE_ROWS = 10;
+const COLLAPSE_COLS = 10;
+let blockSize;
+let collapseGrid = [];
+let collapseScore = 0;
+let particles = [];
+let flyingTools = [];
+let currentRound = 1;
+let isResettingRound = false; 
+
+const TOOL_EMOJIS = { bomb: "💣", rocket: "🚀", bee: "🐝", plane: "✈️", ufo: "🛸" };
+let selectedTool = null;
+let toolCounts = { bomb: 2, rocket: 2, bee: 2, plane: 2, ufo: 1 };
+
+let AC;
+function beep(f, d=0.08, ty='square', v=0.03, ramp){
+  try {
+    AC = AC || new AudioContext();
+    const o = AC.createOscillator(), k = AC.createGain(), n = AC.currentTime;
+    o.type = ty; o.frequency.setValueAtTime(f, n);
+    if(ramp) o.frequency.exponentialRampToValueAtTime(ramp, n+d);
+    k.gain.setValueAtTime(v, n); k.gain.exponentialRampToValueAtTime(0.001, n+d);
+    o.connect(k).connect(AC.destination); o.start(); o.stop(n+d);
+  } catch(e){}
+}
+
+function initCollapseGame() {
+    canvasCol = document.getElementById("canvas-collapse");
+    if (!canvasCol) return;
+    ctxCol = canvasCol.getContext("2d");
+    collapseScoreEl = document.getElementById("collapse-score");
+
+    blockSize = canvasCol.width / COLLAPSE_COLS;
+    isResettingRound = false;
+
+    const savedState = localStorage.getItem("collapse_save_state");
+    if (savedState) {
+        try {
+            const state = JSON.parse(savedState);
+            collapseGrid = state.grid;
+            collapseScore = state.score;
+            currentRound = state.round;
+            toolCounts = state.tools;
+        } catch(e) {
+            startFreshGame();
+        }
+    } else {
+        startFreshGame();
+    }
+
+    if(collapseScoreEl) collapseScoreEl.textContent = collapseScore;
+    updateToolButtonsHTML();
+
+    canvasCol.onclick = handleCollapseClick;
+    window.onmousemove = updateCustomCursorPos;
+
+    renderLeaderboard("collapse_records");
+    collapseGameLoop();
+}
+
+function startFreshGame() {
+    collapseScore = 0;
+    currentRound = 1;
+    toolCounts = { bomb: 2, rocket: 2, bee: 2, plane: 2, ufo: 1 };
+    generateNewRoundGrid();
+}
+
+function saveGameState() {
+    const state = {
+        grid: collapseGrid,
+        score: collapseScore,
+        round: currentRound,
+        tools: toolCounts
+    };
+    localStorage.setItem("collapse_save_state", JSON.stringify(state));
+}
+
+function resetCurrentGameBtn() {
+    if(confirm("Deseja mesmo reiniciar a partida do zero?")) {
+        localStorage.removeItem("collapse_save_state");
+        startFreshGame();
+        if(collapseScoreEl) collapseScoreEl.textContent = collapseScore;
+        showFeedbackText("🔄 Jogo reiniciado do zero!");
+        beep(300, 0.1, 'triangle', 0.04);
+    }
+}
+
+function generateNewRoundGrid() {
+    collapseGrid = [];
+    particles = [];
+    flyingTools = [];
+    selectedTool = null;
+    isResettingRound = false;
+    hideCustomCursor();
+    updateToolButtonsHTML();
+
+    for(let r=0; r < COLLAPSE_ROWS; r++) {
+        collapseGrid[r] = [];
+        for(let c=0; c < COLLAPSE_COLS; c++) {
+            let visualY = r * blockSize;
+            let toolInside = null;
+            if(Math.random() < 0.08) {
+                const toolsList = ["bomb", "rocket", "bee", "plane", "ufo"];
+                toolInside = toolsList[Math.floor(Math.random() * toolsList.length)];
+            }
+
+            collapseGrid[r][c] = { 
+                color: COLORS[Math.floor(Math.random() * COLORS.length)], 
+                active: true,
+                currentY: visualY,
+                targetY: visualY,
+                containedTool: toolInside
+            };
+        }
+    }
+    saveGameState();
+}
+
+function updateToolButtonsHTML() {
+    ["bomb", "rocket", "bee", "plane", "ufo"].forEach(t => {
+        const btn = document.getElementById(`tool-${t}`);
+        const cnt = document.getElementById(`count-${t}`);
+        if(btn && cnt) {
+            cnt.textContent = toolCounts[t];
+            btn.classList.remove("selected");
+            if(selectedTool === t) btn.classList.add("selected");
+        }
+    });
+}
+
+function selectTool(toolType) {
+    if(toolCounts[toolType] <= 0) return;
+    if(selectedTool === toolType) {
+        selectedTool = null;
+        hideCustomCursor();
+    } else {
+        selectedTool = toolType;
+        showCustomCursor(TOOL_EMOJIS[toolType]);
+        beep(500, 0.05, 'sine', 0.03, 700);
+    }
+    updateToolButtonsHTML();
+}
+
+function showCustomCursor(emoji) {
+    const cursorEl = document.getElementById("custom-cursor-tool");
+    if(cursorEl) {
+        cursorEl.textContent = emoji;
+        cursorEl.style.display = "block";
+    }
+}
+
+function hideCustomCursor() {
+    const cursorEl = document.getElementById("custom-cursor-tool");
+    if(cursorEl) cursorEl.style.display = "none";
+}
+
+function updateCustomCursorPos(e) {
+    const cursorEl = document.getElementById("custom-cursor-tool");
+    if(cursorEl && cursorEl.style.display === "block") {
+        cursorEl.style.left = e.clientX + "px";
+        cursorEl.style.top = e.clientY + "px";
+    }
+}
+
+function createExplosion(r, c, color) {
+    let startX = c * blockSize + blockSize / 2;
+    let startY = r * blockSize + blockSize / 2;
+    for(let i=0; i<10; i++) {
+        particles.push({
+            x: startX,
+            y: startY,
+            size: Math.random() * 5 + 3,
+            color: color,
+            dx: (Math.random() - 0.5) * 7,
+            dy: (Math.random() - 0.5) * 7,
+            life: 25
+        });
+    }
+}
+
+function spawnFlyingTool(toolType, targetR, targetC) {
+    let targetX = targetC * blockSize + blockSize / 2;
+    let targetY = targetR * blockSize + blockSize / 2;
+    
+    flyingTools.push({
+        x: -40,
+        y: targetY,
+        targetX: targetX,
+        targetY: targetY,
+        targetR: targetR,
+        targetC: targetC,
+        speed: 18,
+        type: toolType,
+        emoji: TOOL_EMOJIS[toolType]
+    });
+}
+
+function handleCollapseClick(e) {
+    if(!canvasCol || isResettingRound) return;
+    const rect = canvasCol.getBoundingClientRect();
+    let x = (e.clientX - rect.left) * (canvasCol.width / rect.width);
+    let y = (e.clientY - rect.top) * (canvasCol.height / rect.height);
+
+    let c = Math.floor(x / blockSize);
+    let r = Math.floor(y / blockSize);
+
+    if(r >= 0 && r < COLLAPSE_ROWS && c >= 0 && c < COLLAPSE_COLS) {
+        let block = collapseGrid[r][c];
+        
+        if(selectedTool) {
+            if(!block.active) return;
+            toolCounts[selectedTool]--;
+            spawnFlyingTool(selectedTool, r, c);
+            selectedTool = null;
+            hideCustomCursor();
+            updateToolButtonsHTML();
+            beep(400, 0.08, 'sawtooth', 0.04, 750);
+        } else if(block.active) {
+            if(block.containedTool) {
+                let collected = block.containedTool;
+                toolCounts[collected]++;
+                updateToolButtonsHTML();
+                createExplosion(r, c, block.color);
+                block.active = false;
+                collapseScore += 25;
+                if(collapseScoreEl) collapseScoreEl.textContent = collapseScore;
+                beep(880, 0.1, 'triangle', 0.05, 1320);
+                showFeedbackText(`🎒 Coletou: ${TOOL_EMOJIS[collected]}`);
+                applyGravity();
+                handleEmptyColumns();
+                checkCollapseGameEnd();
+            } else {
+                processCollapse(r, c);
+            }
+        }
+    }
+}
+
+function showFeedbackText(txt) {
+    const inst = document.getElementById("collapse-instructions");
+    if(inst) {
+        inst.textContent = txt;
+        inst.style.color = "var(--coin)";
+        setTimeout(() => { 
+            inst.textContent = "Combine 5+ blocos para ganhar itens! • Colete itens no tabuleiro!"; 
+            inst.style.color = "var(--dim)";
+        }, 2200);
+    }
+}
+
+function triggerToolEffect(toolType, r, c) {
+    let explodedCount = 0;
+    beep(200, 0.2, 'sawtooth', 0.06, 80);
+
+    if(toolType === "bomb") {
+        for(let i = r-1; i <= r+1; i++) {
+            for(let j = c-1; j <= c+1; j++) {
+                if(i >= 0 && i < COLLAPSE_ROWS && j >= 0 && j < COLLAPSE_COLS && collapseGrid[i][j].active) {
+                    createExplosion(i, j, collapseGrid[i][j].color);
+                    collapseGrid[i][j].active = false;
+                    explodedCount++;
+                }
+            }
+        }
+    } else if(toolType === "rocket") {
+        for(let j=0; j < COLLAPSE_COLS; j++) {
+            if(collapseGrid[r][j].active) {
+                createExplosion(r, j, collapseGrid[r][j].color);
+                collapseGrid[r][j].active = false;
+                explodedCount++;
+            }
+        }
+    } else if(toolType === "bee") {
+        for(let i=0; i < COLLAPSE_ROWS; i++) {
+            if(collapseGrid[i][c].active) {
+                createExplosion(i, c, collapseGrid[i][c].color);
+                collapseGrid[i][c].active = false;
+                explodedCount++;
+            }
+        }
+    } else if(toolType === "plane") {
+        let targetColor = collapseGrid[r][c].color;
+        for(let i=0; i < COLLAPSE_ROWS; i++) {
+            for(let j=0; j < COLLAPSE_COLS; j++) {
+                if(collapseGrid[i][j].active && collapseGrid[i][j].color === targetColor) {
+                    createExplosion(i, j, collapseGrid[i][j].color);
+                    collapseGrid[i][j].active = false;
+                    explodedCount++;
+                }
+            }
+        }
+    } else if(toolType === "ufo") {
+        for(let j = c-1; j <= c+1; j++) {
+            if (j >= 0 && j < COLLAPSE_COLS) {
+                for(let i=0; i < COLLAPSE_ROWS; i++) {
+                    if(collapseGrid[i][j].active) {
+                        createExplosion(i, j, collapseGrid[i][j].color);
+                        collapseGrid[i][j].active = false;
+                        explodedCount++;
+                    }
+                }
+            }
+        }
+    }
+
+    if(explodedCount > 0) {
+        collapseScore += explodedCount * 12;
+        if(collapseScoreEl) collapseScoreEl.textContent = collapseScore;
+        applyGravity();
+        handleEmptyColumns();
+        checkCollapseGameEnd();
+    }
+}
+
+function getCollapseNeighbors(r, c, color) {
+    let queue = [[r, c]];
+    let connected = [];
+    let visited = Array(COLLAPSE_ROWS).fill().map(() => Array(COLLAPSE_COLS).fill(false));
+
+    while(queue.length > 0) {
+        let [currR, currC] = queue.shift();
+        if(currR < 0 || currR >= COLLAPSE_ROWS || currC < 0 || currC >= COLLAPSE_COLS) continue;
+        if(visited[currR][currC] || !collapseGrid[currR][currC].active || collapseGrid[currR][currC].color !== color) continue;
+
+        visited[currR][currC] = true;
+        connected.push([currR, currC]);
+
+        queue.push([currR - 1, currC], [currR + 1, currC], [currR, currC - 1], [currR, currC + 1]);
+    }
+    return connected;
+}
+
+function processCollapse(r, c) {
+    let targetColor = collapseGrid[r][c].color;
+    let matches = getCollapseNeighbors(r, c, targetColor);
+
+    if(matches.length >= 2) {
+        matches.forEach(([mr, mc]) => { 
+            createExplosion(mr, mc, collapseGrid[mr][mc].color);
+            collapseGrid[mr][mc].active = false; 
+        });
+        
+        collapseScore += matches.length * 10;
+        if(collapseScoreEl) collapseScoreEl.textContent = collapseScore;
+        beep(540, 0.08, 'square', 0.04, 880);
+
+        if(matches.length >= 5) {
+            const listTools = ["bomb", "rocket", "bee", "plane", "ufo"];
+            let reward = listTools[Math.floor(Math.random() * listTools.length)];
+            toolCounts[reward]++;
+            updateToolButtonsHTML();
+            beep(780, 0.15, 'triangle', 0.05, 1200);
+            showFeedbackText(`🎁 COMBO x${matches.length}! Ganhou: ${TOOL_EMOJIS[reward]}`);
+        }
+
+        applyGravity();
+        handleEmptyColumns();
+        checkCollapseGameEnd();
+    }
+}
+
+function applyGravity() {
+    for (let c = 0; c < COLLAPSE_COLS; c++) {
+        for (let r = COLLAPSE_ROWS - 1; r >= 0; r--) {
+            if (!collapseGrid[r][c].active) {
+                for (let rAbove = r - 1; rAbove >= 0; rAbove--) {
+                    if (collapseGrid[rAbove][c].active) {
+                        collapseGrid[r][c].active = true;
+                        collapseGrid[r][c].color = collapseGrid[rAbove][c].color;
+                        collapseGrid[r][c].currentY = collapseGrid[rAbove][c].currentY;
+                        collapseGrid[r][c].containedTool = collapseGrid[rAbove][c].containedTool;
+                        collapseGrid[rAbove][c].active = false;
+                        collapseGrid[rAbove][c].containedTool = null;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    for(let r=0; r < COLLAPSE_ROWS; r++) {
+        for(let c=0; c < COLLAPSE_COLS; c++) {
+            collapseGrid[r][c].targetY = r * blockSize;
+        }
+    }
+    saveGameState();
+}
+
+function handleEmptyColumns() {
+    for (let c = 0; c < COLLAPSE_COLS - 1; c++) {
+        if (!collapseGrid[COLLAPSE_ROWS - 1][c].active) {
+            for (let nextC = c + 1; nextC < COLLAPSE_COLS; nextC++) {
+                if (collapseGrid[COLLAPSE_ROWS - 1][nextC].active) {
+                    for (let r = 0; r < COLLAPSE_ROWS; r++) {
+                        collapseGrid[r][c].active = collapseGrid[r][nextC].active;
+                        collapseGrid[r][c].color = collapseGrid[r][nextC].color;
+                        collapseGrid[r][c].currentY = collapseGrid[r][nextC].currentY;
+                        collapseGrid[r][c].containedTool = collapseGrid[r][nextC].containedTool;
+                        collapseGrid[r][nextC].active = false;
+                        collapseGrid[r][nextC].containedTool = null;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+    for(let r=0; r < COLLAPSE_ROWS; r++) {
+        for(let c=0; c < COLLAPSE_COLS; c++) {
+            collapseGrid[r][c].targetY = r * blockSize;
+        }
+    }
+    saveGameState();
+}
+
+function updateCollapseState() {
+    for(let r=0; r < COLLAPSE_ROWS; r++) {
+        for(let c=0; c < COLLAPSE_COLS; c++) {
+            let b = collapseGrid[r][c];
+            if(b.active && b.currentY < b.targetY) {
+                b.currentY += 6;
+                if(b.currentY > b.targetY) b.currentY = b.targetY;
+            }
+        }
+    }
+
+    for(let i = flyingTools.length - 1; i >= 0; i--) {
+        let ft = flyingTools[i];
+        let angle = Math.atan2(ft.targetY - ft.y, ft.targetX - ft.x);
+        ft.x += Math.cos(angle) * ft.speed;
+        ft.y += Math.sin(angle) * ft.speed;
+
+        if(Math.hypot(ft.targetX - ft.x, ft.targetY - ft.y) < ft.speed) {
+            triggerToolEffect(ft.type, ft.targetR, ft.targetC);
+            flyingTools.splice(i, 1);
+        }
+    }
+
+    for(let i = particles.length - 1; i >= 0; i--) {
+        let p = particles[i];
+        p.x += p.dx; p.y += p.dy;
+        p.life--;
+        if(p.life <= 0) particles.splice(i, 1);
+    }
+}
+
+function drawCollapseGame() {
+    if(!canvasCol) return;
+    // Arena estilo Quadrados.io
+    ctxCol.fillStyle = "#161b3a";
+    ctxCol.fillRect(0, 0, canvasCol.width, canvasCol.height);
+
+    // Grade de fundo
+    ctxCol.strokeStyle = "rgba(120, 130, 200, 0.12)";
+    ctxCol.lineWidth = 1;
+    ctxCol.beginPath();
+    for (let x = 0; x <= canvasCol.width; x += blockSize) { ctxCol.moveTo(x, 0); ctxCol.lineTo(x, canvasCol.height); }
+    for (let y = 0; y <= canvasCol.height; y += blockSize) { ctxCol.moveTo(0, y); ctxCol.lineTo(canvasCol.width, y); }
+    ctxCol.stroke();
+
+    for(let r=0; r < COLLAPSE_ROWS; r++) {
+        for(let c=0; c < COLLAPSE_COLS; c++) {
+            let block = collapseGrid[r][c];
+            if(block.active) {
+                ctxCol.save();
+                let bx = c * blockSize + 2;
+                let by = block.currentY + 2;
+                let bw = blockSize - 4;
+                let bh = blockSize - 4;
+
+                // Estilo Quadrado com relevo e sombra
+                ctxCol.fillStyle = block.color;
+                ctxCol.fillRect(bx, by, bw, bh);
+
+                ctxCol.strokeStyle = "rgba(0,0,0,0.35)";
+                ctxCol.lineWidth = 2;
+                ctxCol.strokeRect(bx, by, bw, bh);
+
+                // Top highlight
+                ctxCol.fillStyle = "rgba(255,255,255,0.22)";
+                ctxCol.fillRect(bx, by, bw, bh * 0.3);
+                
+                if(block.containedTool) {
+                    ctxCol.font = "1.3rem Arial";
+                    ctxCol.textAlign = "center";
+                    ctxCol.textBaseline = "middle";
+                    ctxCol.fillText(TOOL_EMOJIS[block.containedTool], bx + bw/2, by + bh/2);
+                }
+                ctxCol.restore();
+            }
+        }
+    }
+
+    flyingTools.forEach(ft => {
+        ctxCol.save();
+        ctxCol.font = "2rem Arial";
+        ctxCol.textAlign = "center";
+        ctxCol.textBaseline = "middle";
+        ctxCol.fillText(ft.emoji, ft.x, ft.y);
+        ctxCol.restore();
+    });
+
+    particles.forEach(p => {
+        ctxCol.save();
+        ctxCol.fillStyle = p.color;
+        ctxCol.globalAlpha = p.life / 25;
+        ctxCol.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size);
+        ctxCol.restore();
+    });
+}
+
+function checkCollapseGameEnd() {
+    if (isResettingRound) return;
+
+    let activeCount = 0;
+    let hasMoves = false;
+
+    for(let r=0; r < COLLAPSE_ROWS; r++) {
+        for(let c=0; c < COLLAPSE_COLS; c++) {
+            if(collapseGrid[r][c].active) {
+                activeCount++;
+                let matches = getCollapseNeighbors(r, c, collapseGrid[r][c].color);
+                if(matches.length >= 2) hasMoves = true;
+            }
+        }
+    }
+
+    if(activeCount === 0) {
+        isResettingRound = true;
+        setTimeout(() => {
+            currentRound++;
+            collapseScore += 500; 
+            if(collapseScoreEl) collapseScoreEl.textContent = collapseScore;
+            showFeedbackText(`🎉 RODADA ${currentRound}! Limpou tudo (+500 pts)`);
+            beep(660, 0.15, 'square', 0.06, 1320);
+            generateNewRoundGrid();
+        }, 300);
+        return;
+    }
+
+    if(!hasMoves) {
+        let totalToolsAvailable = toolCounts.bomb + toolCounts.rocket + toolCounts.bee + toolCounts.plane + toolCounts.ufo;
+        
+        if (totalToolsAvailable > 0) {
+            const inst = document.getElementById("collapse-instructions");
+            if(inst) {
+                inst.textContent = "⚠️ Sem combinações! Use suas ferramentas para abrir caminho!";
+                inst.style.color = "var(--coin)";
+            }
+        } else {
+            isResettingRound = true;
+            localStorage.removeItem("collapse_save_state");
+            
+            setTimeout(() => {
+                document.getElementById("gov-score").textContent = collapseScore;
+                document.getElementById("modal-gov").style.display = "flex";
+                beep(180, 0.35, 'sawtooth', 0.06, 50);
+            }, 500);
+        }
+    } else {
+        saveGameState();
+    }
+}
+
+function saveRecordAndRestart(){
+    let name = document.getElementById("pet-name-input").value.trim();
+    if(!name) name = "Bichinho";
+    let records = JSON.parse(localStorage.getItem("collapse_records")) || [];
+    records.push({ name: name.substring(0, 12), score: collapseScore });
+    records.sort((a, b) => b.score - a.score);
+    records = records.slice(0, 5);
+    localStorage.setItem("collapse_records", JSON.stringify(records));
+    document.getElementById("modal-gov").style.display = "none";
+    startFreshGame();
+    initCollapseGame();
+}
+
+function renderLeaderboard(keyName) {
+    const leaderboardListEl = document.getElementById("leaderboard-list");
+    if(!leaderboardListEl) return;
+    let records = JSON.parse(localStorage.getItem(keyName)) || [];
+    leaderboardListEl.innerHTML = "";
+    records.forEach(rec => {
+        const li = document.createElement("li");
+        li.innerHTML = `<span>🐾 ${rec.name}</span><b style="color:var(--coin)">${rec.score}</b>`;
+        leaderboardListEl.appendChild(li);
+    });
+    if(records.length === 0) leaderboardListEl.innerHTML = "<p style='font-size:11px;color:var(--dim);text-align:center;'>Nenhum pet registrado!</p>";
+}
+
+function collapseGameLoop() {
+    if(document.getElementById("canvas-collapse")) {
+        updateCollapseState();
+        drawCollapseGame();
+        requestAnimationFrame(collapseGameLoop);
+    }
+}
+
+window.onload = () => { initCollapseGame(); };
+</script>
+</body>
+</html>
