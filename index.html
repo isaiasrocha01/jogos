@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Arcade Hub — Jogos</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #070b14;
+  --surface: #0d1527;
+  --panel: #111b33;
+  --border: #1c355c;
+  --neon-cyan: #00f5ff;
+  --neon-pink: #ff2d78;
+  --neon-gold: #ffe600;
+  --neon-purple: #8b5cf6;
+  --text: #e2f1ff;
+  --dim: #6287aa;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  min-height: 100vh;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: 'Rajdhani', system-ui, sans-serif;
+  overflow-x: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Fundo espacial e grid sci-fi */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: 
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 245, 255, 0.15), transparent 70%),
+    radial-gradient(circle 600px at 90% 80%, rgba(255, 45, 120, 0.08), transparent 60%),
+    radial-gradient(circle 500px at 10% 90%, rgba(139, 92, 246, 0.08), transparent 60%);
+  z-index: 0;
+}
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 0, 0, 0.18) 2px, rgba(0, 0, 0, 0.18) 4px);
+  z-index: 10;
+}
+
+.wrap {
+  width: min(1100px, 92vw);
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 32px 0 40px;
+}
+
+/* Header */
+header {
+  text-align: center;
+  margin-bottom: 38px;
+}
+.brand-tag {
+  display: inline-block;
+  font-family: 'Orbitron', monospace;
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--neon-cyan);
+  background: rgba(0, 245, 255, 0.08);
+  border: 1px solid rgba(0, 245, 255, 0.25);
+  padding: 5px 14px;
+  border-radius: 99px;
+  margin-bottom: 14px;
+  text-shadow: 0 0 10px rgba(0, 245, 255, 0.5);
+}
+h1 {
+  font-family: 'Orbitron', monospace;
+  font-weight: 900;
+  font-size: clamp(32px, 6vw, 62px);
+  letter-spacing: 0.06em;
+  line-height: 1.1;
+  background: linear-gradient(135deg, #ffffff 30%, var(--neon-cyan) 85%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 35px rgba(0, 245, 255, 0.3);
+}
+h1 span {
+  background: linear-gradient(135deg, var(--neon-pink) 20%, #ff80a8 90%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+p.subtitle {
+  color: var(--dim);
+  font-size: clamp(14px, 2.2vw, 17px);
+  margin-top: 10px;
+  letter-spacing: 0.05em;
+  max-width: 580px;
+  margin-inline: auto;
+}
+
+/* Stats quick bar */
+.top-stats {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin: 18px 0 32px;
+  flex-wrap: wrap;
+}
+.stat-pill {
+  background: rgba(13, 21, 39, 0.7);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  backdrop-filter: blur(8px);
+}
+.stat-pill b {
+  font-family: 'Orbitron', monospace;
+  color: var(--neon-gold);
+}
+
+/* Cards Grid */
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+  margin-bottom: 34px;
+}
+
+.game-card {
+  background: linear-gradient(160deg, rgba(17, 27, 51, 0.85) 0%, rgba(10, 15, 28, 0.95) 100%);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  backdrop-filter: blur(10px);
+}
+.game-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(0, 245, 255, 0.45);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5), 0 0 25px rgba(0, 245, 255, 0.2);
+}
+
+.game-card.accent-pink:hover {
+  border-color: rgba(255, 45, 120, 0.5);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5), 0 0 25px rgba(255, 45, 120, 0.22);
+}
+
+/* Banner / Preview Area */
+.card-banner {
+  height: 165px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #090e1c;
+}
+.card-banner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, rgba(13, 21, 39, 1) 0%, transparent 80%);
+}
+
+.banner-cubepush {
+  background: radial-gradient(circle at 50% 40%, rgba(0, 245, 255, 0.2), #070d1a 80%);
+}
+.banner-quadrados {
+  background: radial-gradient(circle at 50% 40%, rgba(255, 45, 120, 0.2), #090c17 80%);
+}
+
+/* Animated visual icon inside banner */
+.banner-badge {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.icon-box {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 26px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+.icon-cubepush {
+  background: linear-gradient(135deg, #00f5ff, #0088cc);
+  border: 2px solid #a8f2ea;
+  box-shadow: 0 0 20px rgba(0, 245, 255, 0.5);
+}
+.icon-quadrados {
+  background: linear-gradient(135deg, #ff2d78, #a81c4e);
+  border: 2px solid #ffa0c0;
+  box-shadow: 0 0 20px rgba(255, 45, 120, 0.5);
+}
+
+.pill-type {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  font-family: 'Orbitron', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-weight: 700;
+  z-index: 2;
+  text-transform: uppercase;
+}
+.pill-puzzle {
+  background: rgba(0, 245, 255, 0.15);
+  border: 1px solid var(--neon-cyan);
+  color: var(--neon-cyan);
+}
+.pill-action {
+  background: rgba(255, 45, 120, 0.15);
+  border: 1px solid var(--neon-pink);
+  color: var(--neon-pink);
+}
+
+/* Card Body */
+.card-body {
+  padding: 20px 22px 24px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+.card-body h2 {
+  font-family: 'Orbitron', monospace;
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  letter-spacing: 0.04em;
+}
+.card-body p.card-desc {
+  font-size: 14px;
+  color: var(--dim);
+  line-height: 1.5;
+  margin-bottom: 16px;
+  flex: 1;
+}
+
+/* Feature tags */
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+.tag {
+  font-size: 11px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+/* Play button */
+.btn-play {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  font-family: 'Orbitron', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 13px;
+  border-radius: 10px;
+  transition: all 0.18s ease;
+  cursor: pointer;
+  text-align: center;
+}
+.btn-cyan {
+  background: linear-gradient(135deg, #00f5ff, #00a0b0);
+  color: #02161c;
+  box-shadow: 0 4px 0 #00606b, 0 0 16px rgba(0, 245, 255, 0.35);
+}
+.btn-cyan:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 5px 0 #00606b, 0 0 22px rgba(0, 245, 255, 0.55);
+}
+.btn-cyan:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #00606b;
+}
+
+.btn-pink {
+  background: linear-gradient(135deg, #ff2d78, #b81b50);
+  color: #ffffff;
+  box-shadow: 0 4px 0 #730f31, 0 0 16px rgba(255, 45, 120, 0.35);
+}
+.btn-pink:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 5px 0 #730f31, 0 0 22px rgba(255, 45, 120, 0.55);
+}
+.btn-pink:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #730f31;
+}
+
+/* Footer */
+footer {
+  text-align: center;
+  color: var(--dim);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  margin-top: auto;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="brand-tag">Central de Jogos</div>
+    <h1>ARCADE <span>HUB</span></h1>
+    <p class="subtitle">Escolha seu desafio favorito e divirta-se direto no navegador em qualquer dispositivo.</p>
+
+    <div class="top-stats">
+      <div class="stat-pill">🕹️ Total de Jogos: <b>2</b></div>
+      <div class="stat-pill">⚡ Tecnologias: <b>HTML5 · Canvas · WebAudio</b></div>
+      <div class="stat-pill">📱 Suporte: <b>PC & Mobile</b></div>
+    </div>
+  </header>
+
+  <main class="game-grid">
+    <!-- Jogo 1: CUBEPUSH -->
+    <article class="game-card">
+      <div class="card-banner banner-cubepush">
+        <span class="pill-type pill-puzzle">Puzzle & Estratégia</span>
+        <div class="banner-badge">
+          <div class="icon-box icon-cubepush">📦</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <h2>CUBEPUSH</h2>
+        <p class="card-desc">
+          Empurre os cubos inteligentes até os alvos. Nova versão futurista com cubos de gelo, fogo, teletransporte, bombas e multiplicador de chain combo!
+        </p>
+        <div class="tag-list">
+          <span class="tag">15 Níveis Únicos</span>
+          <span class="tag">❄️ Gelo & 🔥 Fogo</span>
+          <span class="tag">🌀 Teleporte</span>
+          <span class="tag">💡 Dicas Automáticas</span>
+        </div>
+        <a href="empurra-quadrados.html" class="btn-play btn-cyan">
+          JOGAR AGORA ▶
+        </a>
+      </div>
+    </article>
+
+    <!-- Jogo 2: Quadrados.io -->
+    <article class="game-card accent-pink">
+      <div class="card-banner banner-quadrados">
+        <span class="pill-type pill-action">Ação Arena .IO</span>
+        <div class="banner-badge">
+          <div class="icon-box icon-quadrados">⚔️</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <h2>QUADRADOS.IO</h2>
+        <p class="card-desc">
+          Batalha épica no estilo arena survival. Conquiste território, desvie de inimigos, use dashes e bombas para liderar o ranking de sobrevivência!
+        </p>
+        <div class="tag-list">
+          <span class="tag">Arena Dinâmica</span>
+          <span class="tag">Sistema de Ranking</span>
+          <span class="tag">Habilidades Especiais</span>
+          <span class="tag">Modos Personalizáveis</span>
+        </div>
+        <a href="Quadrados.io.html" class="btn-play btn-pink">
+          JOGAR AGORA ▶
+        </a>
+      </div>
+    </article>
+  </main>
+
+  <footer>
+    <p>ARCADE HUB &bull; Desenvolvido para navegadores modernos &bull; Salva progresso local automaticamente</p>
+  </footer>
+</div>
+
+</body>
+</html>
