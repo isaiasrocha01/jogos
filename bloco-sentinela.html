@@ -135,7 +135,7 @@ function heroStep(dt){
   const mh=val('hhp');
   if(hero.dead){hero.rt-=dt;if(hero.rt<=0){hero.dead=false;hero.hp=mh;hero.x=0;hero.y=60;note('Herói de volta!')}return}
   let ix=(keys.r?1:0)-(keys.l?1:0),iy=(keys.d?1:0)-(keys.u?1:0);
-  if(joy){ix=joy.dx;iy=joy.dy}
+  if(joy&&(joy.dx||joy.dy)){ix=joy.dx;iy=joy.dy}
   const m=Math.hypot(ix,iy);if(m>1){ix/=m;iy/=m}
   const sp=val('hspd');hero.x+=ix*sp*dt;hero.y+=iy*sp*dt;
   if(m>.1){hero.fx=ix;hero.fy=iy}
@@ -303,7 +303,7 @@ function settings(){
   paused=true;
   overlay(`<h2>BLOCO SENTINELA</h2><p>Melhor onda: ${S.best} · Jogo idle: ele continua a defender sozinho, e você ganha moedas mesmo fora da tela.</p>
   <button class="btn main" id="o1">Continuar</button><button class="btn" id="o2">Poderes automáticos: ${S.auto?'LIGADO':'DESLIGADO'}</button><button class="btn" id="o3">Zerar progresso</button>
-  <p style="font-size:12px">Herói: arraste o dedo ou use WASD/setas. Atalhos: 1 a 4 usam os poderes · P pausa.</p>`);
+  <p style="font-size:12px">${coarse?'Herói: arraste o dedo na tela.':'Herói: use as setas ou WASD.'} Atalhos: 1 a 4 usam os poderes · P pausa.</p>`);
   $('o1').onclick=closeOv;$('o2').onclick=()=>{S.auto=!S.auto;save();settings()};
   $('o3').onclick=()=>{if(confirm('Apagar todo o progresso?')){S=S0();try{localStorage.removeItem('bloco_sentinela')}catch(e){}en=[];bl=[];pets=[];pick=[];hero.hp=val('hhp');hero.dead=false;tw.hp=maxHp();tw.sh=0;phase='break';breakT=1;buildCards();closeOv()}};
 }
@@ -311,11 +311,12 @@ function settings(){
 $('bSet').onclick=settings;
 $('bSpd').onclick=()=>{S.speed=S.speed%3+1;$('bSpd').textContent='x'+S.speed;save()};
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{tab=+b.dataset.t;buildCards()});
+const coarse=typeof matchMedia==='function'&&matchMedia('(pointer:coarse)').matches;
 const KM2={ArrowLeft:'l',a:'l',A:'l',ArrowRight:'r',d:'r',D:'r',ArrowUp:'u',w:'u',W:'u',ArrowDown:'d',s:'d',S:'d'};
 addEventListener('keydown',e=>{const k=KM2[e.key];if(k){keys[k]=1;e.preventDefault();return}if(e.key>='1'&&e.key<='4')cast(+e.key-1);else if(e.key==='p'||e.key==='P')paused?closeOv():settings()});
 addEventListener('keyup',e=>{const k=KM2[e.key];if(k)keys[k]=0});
 addEventListener('blur',()=>{keys={}});
-cv.addEventListener('pointerdown',e=>{if(paused)return;joy={id:e.pointerId,sx:e.clientX,sy:e.clientY,dx:0,dy:0};try{cv.setPointerCapture(e.pointerId)}catch(_){}});
+cv.addEventListener('pointerdown',e=>{if(paused||e.pointerType==='mouse')return;joy={id:e.pointerId,sx:e.clientX,sy:e.clientY,dx:0,dy:0};try{cv.setPointerCapture(e.pointerId)}catch(_){}});
 cv.addEventListener('pointermove',e=>{if(!joy||e.pointerId!==joy.id)return;let dx=(e.clientX-joy.sx)/46,dy=(e.clientY-joy.sy)/46;const m=Math.hypot(dx,dy);
   if(m>1){dx/=m;dy/=m;joy.sx=e.clientX-dx*46;joy.sy=e.clientY-dy*46}if(m<.15){dx=0;dy=0}joy.dx=dx;joy.dy=dy});
 ['pointerup','pointercancel'].forEach(v=>cv.addEventListener(v,e=>{if(joy&&e.pointerId===joy.id)joy=null}));
@@ -331,7 +332,7 @@ function loop(ts){
   requestAnimationFrame(loop);
 }
 /* ---------- início ---------- */
-buildPowers();buildCards();$('bSpd').textContent='x'+S.speed;layout();tw.hp=maxHp();hero.hp=val('hhp');setTimeout(()=>note('Arraste na tela (ou use WASD) para mover o herói'),600);
+buildPowers();buildCards();$('bSpd').textContent='x'+S.speed;layout();tw.hp=maxHp();hero.hp=val('hhp');setTimeout(()=>note(coarse?'Arraste o dedo na tela para mover o herói':'Use as setas (ou WASD) para mover o herói'),600);
 const away=Math.min((Date.now()-(S.last||Date.now()))/1000,8*3600);
 if(away>60&&S.wave>1){const gain=Math.floor(away*.3*S.wave*val('gold'));S.coins+=gain;save();paused=true;
   overlay(`<h2>BEM-VINDO DE VOLTA</h2><p>Sua torre defendeu por ${Math.floor(away/60)} min e rendeu <b>🪙 ${fmt(gain)}</b>.</p><button class="btn main" id="o1">Coletar</button>`);$('o1').onclick=()=>{closeOv();refresh()}}
