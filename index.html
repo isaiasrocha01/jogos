@@ -402,6 +402,29 @@ p.subtitle {
   box-shadow: 0 1px 0 #09592b;
 }
 
+.banner-sentinela {
+  background: radial-gradient(circle at 50% 40%, rgba(167, 123, 255, 0.25), #0d1030 80%);
+}
+.icon-sentinela {
+  background: linear-gradient(135deg, #a77bff, #4fd1c5);
+  border: 2px solid #dcd0ff;
+  box-shadow: 0 0 20px rgba(167, 123, 255, 0.5);
+}
+.btn-indigo {
+  background: linear-gradient(135deg, #a77bff, #6c42d6);
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 4px 0 #432296, 0 0 16px rgba(167, 123, 255, 0.35);
+}
+.btn-indigo:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 5px 0 #432296, 0 0 22px rgba(167, 123, 255, 0.55);
+}
+.btn-indigo:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #432296;
+}
+
 /* Footer */
 footer {
   text-align: center;
@@ -423,7 +446,7 @@ footer {
     <p class="subtitle">Escolha seu desafio favorito e divirta-se direto no navegador em qualquer dispositivo.</p>
 
     <div class="top-stats">
-      <div class="stat-pill">🕹️ Total de Jogos: <b>6</b></div>
+      <div class="stat-pill">🕹️ Total de Jogos: <b>7</b></div>
       <div class="stat-pill">⚡ Tecnologias: <b>HTML5 · Canvas · WebAudio</b></div>
       <div class="stat-pill">📱 Suporte: <b>PC & Mobile</b></div>
     </div>
@@ -575,6 +598,31 @@ footer {
           <span class="tag">Cartas Estilizadas</span>
         </div>
         <a href="pet-memory-match.html" class="btn-play btn-green">
+          JOGAR AGORA ▶
+        </a>
+      </div>
+    </article>
+
+    <!-- Jogo 7: Bloco Sentinela -->
+    <article class="game-card">
+      <div class="card-banner banner-sentinela">
+        <span class="pill-type pill-action">Tower Defense</span>
+        <div class="banner-badge">
+          <div class="icon-box icon-sentinela">🏰</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <h2>BLOCO SENTINELA</h2>
+        <p class="card-desc">
+          Defesa de torre estratégica! Fortaleça seu bloco central com melhorias de Ataque, Defesa e Arcano, use poderes especiais e derrote ondas crescentes.
+        </p>
+        <div class="tag-list">
+          <span class="tag">Tower Defense</span>
+          <span class="tag">Upgrades de Atributos</span>
+          <span class="tag">Poderes Ativos</span>
+          <span class="tag">Ondas Infinitas</span>
+        </div>
+        <a href="bloco-sentinela.html" class="btn-play btn-indigo">
           JOGAR AGORA ▶
         </a>
       </div>
