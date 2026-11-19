@@ -141,7 +141,7 @@ body.touch #actions button{font-size:11px;padding:9px 10px;border-radius:8px;bac
 <script>
 const cv=document.getElementById('c'),ctx=cv.getContext('2d'),ov=document.getElementById('ov');
 const exitDialog=document.getElementById('exit-dialog');
-const WD=4000,NB=32,NP=480;
+const WD=4000,NB=32,NP=0;
 const COLS=['#ff5d73','#ffb03b','#ffe14d','#7be26b','#3fd0c9','#5aa2ff','#a77bff','#ff7bd0','#ff8a5c','#9be564'];
 const NAMES=['Cubo','Bloco','Dado','Tijolo','Pixel','Caixa','Quadrão','Bloquinho','Retângulo','Ladrilho','Cubinho','Esquadro','Azulejo','Pedra','Mosaico','Bento','Zé Quadrado','Nina','Kadu','Lia','Tico','Nico','Vito','Leo'];
 const side=m=>9*Math.sqrt(m);
@@ -230,6 +230,7 @@ function mk(name,bot,m){
   return{
     x,y,m,name,bot,col:COLS[Math.floor(Math.random()*COLS.length)],
     tx:x,ty:y,th:0,dash:0,cd:0,aim:null,eggs:0,eaten:0,agi:0,
+    lookX:0,lookY:0,mouthOpen:0,
     petSc:1,petSh:1,nb:0,
     hp:maxHp,maxHp:maxHp,
     atkBonus:0,
@@ -237,7 +238,7 @@ function mk(name,bot,m){
     team:0,teamName:'',revives:[],invuln:0,shield:0,magnet:0,teleports:0,traps:0,slow:0
   };
 }
-const mkPel=()=>({x:rnd(A.x0+20,A.x1-20),y:rnd(A.y0+20,A.y1-20),col:COLS[Math.floor(Math.random()*COLS.length)]});
+const mkPel=()=>({x:rnd(A.x0+20,A.x1-20),y:rnd(A.y0+20,A.y1-20),col:COLS[Math.floor(Math.random()*COLS.length)],drop:0});
 
 function showNetworkStatus(message){
   const el=document.getElementById('network-status'),inl=document.getElementById('net-msg');
@@ -492,12 +493,13 @@ function menu(msg){
     </div>`:`<button id="go" type="button" class="cta">Jogar</button>`}
   </section>
   <details class="fold"><summary>Como jogar</summary><ul class="how">
-    <li><b>Guie</b> o quadrado com o mouse ou, no celular, com o joystick; coma pontos e quadrados menores para crescer.</li>
-    <li><b>Vida:</b> só diminui se você for atacado. Pegue ♥ ou use estações de cura.</li>
+    <li><b>Guie</b> o quadrado com o mouse ou, no celular, com o joystick. Destrua adversários com seus bichinhos e bombas para devorar os <b>destroços</b> e crescer!</li>
+    <li><b>Sem canibalismo direto:</b> você não engole mais adversários vivos; o combate é tático por alcance, bichinhos e itens!</li>
+    <li><b>Vida:</b> só diminui se você for atacado. Pegue ♥ ou passe por estações de cura.</li>
     <li><b>Bichinhos</b> atacam quem entra na sua linha circular e evoluem com o tempo.</li>
+    <li><b>Itens no chão e Caixas:</b> passe por cima de caixas ou itens soltos para coletar automaticamente (ou pressione [X]).</li>
     <li><b>Itens:</b> ♥ cura · C campo · B bomba · A agilidade · O ovo · G bichinho maior · T mais disparos · S escudo · M ímã · F salto · Q armadilha · R reviver aliado.</li>
     <li><b>Duplas e equipes:</b> aliados agem sozinhos; use COMANDO e AJUDA para coordenar. Na dupla, o item R revive o parceiro sozinho.</li>
-    <li><b>Cenário:</b> chegue perto de caixas (item) e estações de cura e use INTERAGIR (tecla X).</li>
     <li><b>Bot Piloto:</b> sem mexer por 5 s, ele assume até você mover o mouse ou o joystick. <b>SAIR</b> encerra a partida e mostra o ranking.</li>
   </ul></details>
     <details class="fold settings"><summary>Personalização e controles</summary>
@@ -584,17 +586,25 @@ function think(b){
   for(const o of ents){
     if(o===b||o.dead||isAlly(b,o))continue;
     const d=Math.hypot(o.x-b.x,o.y-b.y);
-    if(o.m>b.m*.8&&d<b.atkRange&&d<ad){b.aim=o;ad=d}
-    if(o.m>b.m*1.2&&d<420+side(o.m)&&d<td){thr=o;td=d}
-    else if(o.m*1.2<b.m&&d<Math.min(800,320+lv*50)&&d<pd){prey=o;pd=d}
+    if(d<b.atkRange&&d<ad){b.aim=o;ad=d}
+    if(o.hp>b.hp&&d<b.atkRange+120&&d<td){thr=o;td=d}
+    else if(o.hp<b.hp&&d<Math.min(900,400+lv*50)&&d<pd){prey=o;pd=d}
   }
-  if(thr){const a=Math.atan2(b.y-thr.y,b.x-thr.x)+rnd(-.4,.4);b.tx=b.x+Math.cos(a)*400;b.ty=b.y+Math.sin(a)*400;
-    if(td<side(thr.m)+side(b.m)+80&&b.m>30&&Math.random()<.3)dashFor(b);return}
-  if(prey){b.tx=prey.x;b.ty=prey.y;if(pd<260&&b.m>prey.m*1.8&&b.m>40&&Math.random()<.12)dashFor(b);return}
+  if(thr&&b.hp<b.maxHp*0.4){
+    const a=Math.atan2(b.y-thr.y,b.x-thr.x)+rnd(-.4,.4);
+    b.tx=b.x+Math.cos(a)*400;b.ty=b.y+Math.sin(a)*400;
+    if(td<200&&b.m>30&&Math.random()<.25)dashFor(b);
+    return;
+  }
+  if(prey){
+    b.tx=prey.x;b.ty=prey.y;
+    if(pd<260&&b.m>35&&Math.random()<.12)dashFor(b);
+    return;
+  }
   let it=null,id=1e9;for(const q of items){const d=Math.hypot(q.x-b.x,q.y-b.y);if(d<id){id=d;it=q}}
-  if(it&&id<600){b.tx=it.x;b.ty=it.y;return}
-  let bp=null,bd=1e9;for(const q of pel){const d=Math.hypot(q.x-b.x,q.y-b.y);if(d<bd){bd=d;bp=q}}
-  if(bp&&bd<420){b.tx=bp.x;b.ty=bp.y}else if(Math.hypot(b.tx-b.x,b.ty-b.y)<60){b.tx=rnd(100,WD-100);b.ty=rnd(100,WD-100)}
+  if(it&&id<700){b.tx=it.x;b.ty=it.y;return}
+  let bp=null,bd=1e9;for(const q of pel){if(!q.drop)continue;const d=Math.hypot(q.x-b.x,q.y-b.y);if(d<bd){bd=d;bp=q}}
+  if(bp&&bd<500){b.tx=bp.x;b.ty=bp.y}else if(Math.hypot(b.tx-b.x,b.ty-b.y)<60){b.tx=rnd(100,WD-100);b.ty=rnd(100,WD-100)}
 }
 function dashFor(e){if(e.dash<=0&&e.m>25){
   const loss=e.m*.08,n=Math.min(6,Math.max(3,Math.floor(loss/2)));e.m-=loss;e.dash=.28;
@@ -616,8 +626,8 @@ function bombStep(dt){
         b.hit=1;fx.push({x:b.x,y:b.y,t:0,s:.35});beep(120,.5,'sawtooth',.07,30);
         if(e.hp<=0){
           e.dead=1;
-          const nDrops=Math.min(22,Math.max(5,Math.floor(e.m/3)));
-          for(let k=0;k<nDrops;k++)pel.push({x:e.x+rnd(-h,h),y:e.y+rnd(-h,h),col:e.col,drop:1,v:e.m*.8/nDrops,t:15});
+          const nDrops=Math.min(28,Math.max(8,Math.floor(e.m/2.2)));
+          for(let k=0;k<nDrops;k++)pel.push({x:e.x+rnd(-h,h),y:e.y+rnd(-h,h),col:e.col,drop:1,v:e.m*1.1/nDrops,t:25});
           if(b.o===me&&e!==me)kills++;
         }
         break;
@@ -795,6 +805,34 @@ function nearbyObject(e){
   return objects.filter(o=>objectInside(o)&&Math.hypot(e.x-o.x,e.y-o.y)<=side(e.m)/2+90)
     .sort((a,b)=>Math.hypot(e.x-a.x,e.y-a.y)-Math.hypot(e.x-b.x,e.y-b.y))[0];
 }
+function tryAutoPickupObject(e){
+  if(e.dead||e.hp<=0)return;
+  const h=side(e.m)/2+28;
+  for(const o of objects){
+    if(!objectInside(o)||o.cooldown>0)continue;
+    if(Math.abs(e.x-o.x)<h&&Math.abs(e.y-o.y)<h){
+      if(o.type==='cura'){
+        if(e.hp<e.maxHp){
+          const healed=Math.min(60,e.maxHp-e.hp);
+          e.hp+=healed;o.cooldown=30;
+          if(e===me){
+            if(matchStats)matchStats.healing+=healed;
+            toast={t:'Estação: +'+Math.round(healed)+' de vida!',l:2};
+            beep(600,.12,'triangle',.05,900);
+          }
+          fx.push({x:o.x,y:o.y,t:0,s:.35});
+        }
+      }else{
+        const rewards=['bomba','ovo','agil','escudo','ima','salto','armadilha'];
+        const reward=rewards[Math.floor(Math.random()*rewards.length)];
+        o.cooldown=35;collect(e,{k:reward});
+        if(e===me)toast={t:'Caixa coletada! '+ITEMS[reward].n,l:2.5};
+        fx.push({x:o.x,y:o.y,t:0,s:.35});
+        if(e===me)beep(600,.12,'triangle',.05,900);
+      }
+    }
+  }
+}
 function interactObject(e,notify=true){
   if(state!=='play'||e.dead||e.hp<=0)return;
   const o=nearbyObject(e);
@@ -850,7 +888,12 @@ function extrasStep(dt){
     for(const q of traps)if(!isAlly(e,q.o)&&Math.hypot(e.x-q.x,e.y-q.y)<110)e.slow=1;
     if(e.magnet>0)for(const q of pel){const dx=e.x-q.x,dy=e.y-q.y,d=Math.hypot(dx,dy);if(d>1&&d<350){q.x+=dx/d*Math.min(d,300*dt);q.y+=dy/d*Math.min(d,300*dt)}}
     if(arenaEvent&&arenaEvent.type==='perigo'&&e.invuln<=0&&e.shield<=0&&Math.hypot(e.x-arenaEvent.x,e.y-arenaEvent.y)<300){
-      e.hp=Math.max(0,e.hp-12*dt);if(e.hp<=0)e.dead=1;
+      e.hp=Math.max(0,e.hp-12*dt);
+      if(e.hp<=0){
+        e.dead=1;
+        const h=side(e.m)/2,nDrops=Math.min(25,Math.max(6,Math.floor(e.m/2.5)));
+        for(let k=0;k<nDrops;k++)pel.push({x:e.x+rnd(-h,h),y:e.y+rnd(-h,h),col:e.col,drop:1,v:e.m*1.0/nDrops,t:25});
+      }
     }
     if(e.boss){
       e.attackCd-=dt;
@@ -907,6 +950,13 @@ function upd(dt){
     const f=Math.min(1,d/(s*.6+20));
     const sp=330*Math.pow(e.m,-.12)*(e.dash>0?2.3:1)*(e.agi>0?1.6:1)*(e.slow>0?.5:1)*(arenaEvent&&arenaEvent.type==='velocidade'?1.35:1)*(e.bot?Math.min(1.25,.85+.04*lv):1)*f;
     e.x+=dx/d*sp*dt;e.y+=dy/d*sp*dt;
+
+    // Direção do olhar para onde está andando/mirando
+    const targetLookX = d > 2 ? dx / d : 0;
+    const targetLookY = d > 2 ? dy / d : 0;
+    e.lookX = (e.lookX || 0) + (targetLookX - (e.lookX || 0)) * Math.min(1, dt * 14);
+    e.lookY = (e.lookY || 0) + (targetLookY - (e.lookY || 0)) * Math.min(1, dt * 14);
+    e.mouthOpen = Math.max(0, (e.mouthOpen || 0) - dt * 4);
     const h=s/2;e.x=A.x1-A.x0<2*h?(A.x0+A.x1)/2:Math.max(A.x0+h,Math.min(A.x1-h,e.x));e.y=A.y1-A.y0<2*h?(A.y0+A.y1)/2:Math.max(A.y0+h,Math.min(A.y1-h,e.y));
     if(e.dash>0)e.dash-=dt;if(e.agi>0)e.agi-=dt;if(e.invuln>0)e.invuln=Math.max(0,e.invuln-dt);
     
@@ -918,44 +968,40 @@ function upd(dt){
     if(newMax>e.maxHp){e.hp+=(newMax-e.maxHp);e.maxHp=newMax}
     e.atkRange=side(e.m)/2+260+(e.atkBonus||0);
   }
-  for(const e of ents)if(e.bot&&!e.boss&&!e.dead&&e.hp>0)interactObject(e,false);
+  for(const e of ents){
+    if(e.dead||e.hp<=0)continue;
+    tryAutoPickupObject(e);
+    if(e.bot&&!e.boss)interactObject(e,false);
+  }
 
-  // Pontos (comida aumenta massa e dá leve cura)
-  for(const e of ents){if(e.dead||e.boss)continue;const h=side(e.m)/2+4;
+  // Destroços deixados por adversários derrotados (comida que aumenta massa e dá leve cura)
+  for(const e of ents){if(e.dead||e.boss)continue;const h=side(e.m)/2+6;
     for(let i=pel.length-1;i>=0;i--){const q=pel[i];
+      const distDrop=Math.hypot(q.x-e.x,q.y-e.y);
+      if(distDrop<h*2.2){e.mouthOpen=Math.min(1,(e.mouthOpen||0)+0.35)}
       if(Math.abs(q.x-e.x)<h&&Math.abs(q.y-e.y)<h){
-        const val=q.v||1;
+        const val=q.v||2;
         e.m+=val;
+        e.mouthOpen=1;
         const newMax=Math.round(100+e.m*2);
         if(newMax>e.maxHp){e.hp+=(newMax-e.maxHp);e.maxHp=newMax}
         e.hp=Math.min(e.maxHp,e.hp+val*0.6);
         e.atkRange=side(e.m)/2+260+(e.atkBonus||0);
-        if(q.drop)pel.splice(i,1);else pel[i]=mkPel();
-        {if(e===me&&Math.random()<.4)beep(700+Math.random()*300,.04,'square',.015);
-          if(++e.eaten>=50){e.eaten-=50;if(e===me||lv>=3)e.eggs++;if(e===me)beep(660,.12,'triangle',.05,1320)}}}}}
+        pel.splice(i,1);
+        if(e===me)beep(700+Math.random()*300,.04,'square',.015);
+        if(++e.eaten>=40){e.eaten-=40;if(e===me||lv>=3)e.eggs++;if(e===me)beep(660,.12,'triangle',.05,1320)}}}}
 
-  // Quadrados devoram apenas NÃO-ALIADOS
-  for(const a of ents){if(a.dead)continue;
-    for(const b of ents){if(a===b||b.dead||a.dead)continue;
-      if(isAlly(a,b)){
-        // Empurrão elástico suave entre aliados
-        const hA=side(a.m)/2,hB=side(b.m)/2,dAb=Math.hypot(b.x-a.x,b.y-a.y),minD=hA+hB;
-        if(dAb<minD&&dAb>0){
-          const push=(minD-dAb)*0.18,ang=Math.atan2(b.y-a.y,b.x-a.x);
-          b.x+=Math.cos(ang)*push;b.y+=Math.sin(ang)*push;
-        }
-        continue;
+  // Colisão física entre quadrados (combate apenas por tiros, bombas e habilidades — NÃO devora mais adversários vivos)
+  for(const a of ents){if(a.dead||a.hp<=0)continue;
+    for(const b of ents){if(a===b||b.dead||a.dead||b.hp<=0)continue;
+      const hA=side(a.m)/2,hB=side(b.m)/2,dAb=Math.hypot(b.x-a.x,b.y-a.y),minD=hA+hB;
+      if(dAb<minD&&dAb>0){
+        const push=(minD-dAb)*0.35,ang=Math.atan2(b.y-a.y,b.x-a.x);
+        b.x+=Math.cos(ang)*push;b.y+=Math.sin(ang)*push;
+        a.x-=Math.cos(ang)*push*0.5;a.y-=Math.sin(ang)*push*0.5;
       }
-      if(!a.boss&&!b.boss&&b.invuln<=0&&b.shield<=0&&a.m>b.m*1.2){const h=side(a.m)/2-side(b.m)*.15;
-        if(Math.abs(b.x-a.x)<h&&Math.abs(b.y-a.y)<h){
-          a.m+=b.m*.9;
-          const newMax=Math.round(100+a.m*2);
-          if(newMax>a.maxHp){a.hp+=(newMax-a.maxHp);a.maxHp=newMax}
-          a.hp=Math.min(a.maxHp,a.hp+35);
-          a.atkRange=side(a.m)/2+260+(a.atkBonus||0);
-          b.hp=0;b.dead=1;
-          if(a===me){kills++;beep(300,.18,'square',.05,900)}
-        }}}}
+    }
+  }
 
   itemT-=dt;lvT+=dt;if(gameMode!=='captura')zoneStep(dt);bombStep(dt);
   if(itemT<=0&&items.length<10){
@@ -992,8 +1038,8 @@ function upd(dt){
           e.dead=1;
           if(b.pet)b.pet.xp+=25;
           fx.push({x:e.x,y:e.y,t:0,s:.4});
-          const nDrops=Math.min(20,Math.max(4,Math.floor(e.m/3)));
-          for(let k=0;k<nDrops;k++)pel.push({x:e.x+rnd(-h,h),y:e.y+rnd(-h,h),col:e.col,drop:1,v:e.m*.8/nDrops,t:15});
+          const nDrops=Math.min(28,Math.max(8,Math.floor(e.m/2.2)));
+          for(let k=0;k<nDrops;k++)pel.push({x:e.x+rnd(-h,h),y:e.y+rnd(-h,h),col:e.col,drop:1,v:e.m*1.1/nDrops,t:25});
           if(b.o===me&&e!==me){
             kills++;
             toast={t:'Você eliminou '+e.name+'!',l:2.2};
@@ -1263,6 +1309,69 @@ function draw(){
     if(e.shield>0){ctx.strokeStyle='#5aa2ff';ctx.lineWidth=5;ctx.beginPath();ctx.arc(e.x,e.y,h+18,0,Math.PI*2);ctx.stroke()}
     if(e===me&&SKINS[settings.skin].effect){ctx.strokeStyle='#ffe14d';ctx.lineWidth=3;ctx.strokeRect(e.x-h-9,e.y-h-9,s+18,s+18)}
 
+    // Rosto expressivo dentro do quadrado: Dois olhos com pupilas que acompanham o movimento + Boca interativa ao engolir
+    if(s*z>18){
+      const lx = e.lookX || 0;
+      const ly = e.lookY || 0;
+      const eyeW = Math.max(4, s * 0.18);
+      const eyeH = Math.max(4, s * 0.22);
+      const eyeSpacing = s * 0.23;
+      const eyeOffsetY = -s * 0.10;
+      const pupilR = Math.max(1.8, eyeW * 0.32);
+      const pupilShiftMaxX = eyeW * 0.28;
+      const pupilShiftMaxY = eyeH * 0.28;
+
+      // Olho esquerdo e direito (fundo branco com borda sutil)
+      for(const sideDir of [-1, 1]){
+        const eyeX = e.x + (sideDir * eyeSpacing);
+        const eyeY = e.y + eyeOffsetY;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(eyeX - eyeW/2, eyeY - eyeH/2, eyeW, eyeH);
+        ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+        ctx.lineWidth = Math.max(1, s * 0.025);
+        ctx.strokeRect(eyeX - eyeW/2, eyeY - eyeH/2, eyeW, eyeH);
+
+        // Pupila preta que se move na direção do movimento/olhar
+        const pupilX = eyeX + (lx * pupilShiftMaxX);
+        const pupilY = eyeY + (ly * pupilShiftMaxY);
+        ctx.fillStyle = '#0a1020';
+        ctx.fillRect(pupilX - pupilR, pupilY - pupilR, pupilR * 2, pupilR * 2);
+
+        // Brilho no olho
+        const shineSize = Math.max(1, pupilR * 0.55);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(eyeX - eyeW/2 + 1, eyeY - eyeH/2 + 1, shineSize, shineSize);
+      }
+
+      // Boca (abre ao tentar ou conseguir engolir destroços)
+      const mouthY = e.y + s * 0.22;
+      const openAmount = e.mouthOpen || 0;
+      const mouthW = Math.max(6, s * 0.34);
+
+      if(openAmount > 0.08){
+        // Boca aberta estilo "O" ou sorriso aberto engolindo
+        const openH = Math.max(3, s * 0.22 * openAmount);
+        ctx.fillStyle = '#10142b';
+        ctx.beginPath();
+        ctx.ellipse(e.x + (lx * s * 0.05), mouthY, mouthW / 2, openH / 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(0,0,0,0.45)';
+        ctx.lineWidth = Math.max(1, s * 0.03);
+        ctx.stroke();
+
+        // Língua/dente fofo dentro da boca aberta
+        ctx.fillStyle = '#ff5d73';
+        ctx.beginPath();
+        ctx.arc(e.x + (lx * s * 0.05), mouthY + openH * 0.2, Math.max(1.5, mouthW * 0.22), 0, Math.PI);
+        ctx.fill();
+      }else{
+        // Boca fechada expressiva
+        const mouthH = Math.max(2, s * 0.04);
+        ctx.fillStyle = '#0a1020';
+        ctx.fillRect(e.x - mouthW/2, mouthY - mouthH/2, mouthW, mouthH);
+      }
+    }
+
     // Barra de Vida do Boneco
     const barW=Math.max(42,s);
     const barH=Math.max(5,Math.min(9,s*.08));
@@ -1384,7 +1493,7 @@ function draw(){
   ctx.fillRect(pad+10,top+48,180*myHpRatio,8);
   ctx.strokeStyle='rgba(255,255,255,.3)';ctx.lineWidth=1;ctx.strokeRect(pad+10,top+48,180,8);
 
-  ctx.font='14px Silkscreen, monospace';ctx.fillStyle='#9aa0c4';ctx.fillText('Comidos '+kills,pad+10,top+62);
+  ctx.font='14px Silkscreen, monospace';ctx.fillStyle='#9aa0c4';ctx.fillText('Eliminados '+kills,pad+10,top+62);
   ctx.font='12px Silkscreen, monospace';ctx.fillStyle='#ffc93c';ctx.fillText('Ovos '+me.eggs+'  ('+me.eaten+'/50)',pad+10,top+84);
   ctx.fillStyle='#4a5190';ctx.fillRect(pad+10,top+100,180,7);ctx.fillStyle='#ffc93c';ctx.fillRect(pad+10,top+100,180*me.eaten/50,7);
   if(me.eggs>0){ctx.fillStyle='#fff';ctx.fillText('['+settings.keys.egg+'] soltar ovo',pad+10,top+112)}
